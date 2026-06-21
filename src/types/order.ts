@@ -28,6 +28,8 @@ export interface Order {
   createdAt: string;
   source?: 'manual' | 'auto';
   pendingOrderId?: string;
+  batchIds?: string[];
+  discountApplied?: boolean;
 }
 
 export const ORDER_SOURCE_LABELS: Record<string, string> = {

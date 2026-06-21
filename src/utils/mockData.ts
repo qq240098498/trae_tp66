@@ -141,41 +141,64 @@ export const generateMockDeliveryStaff = (): DeliveryStaff[] => [
   },
 ];
 
-export const generateMockInventories = (): Inventory[] => [
-  {
-    id: generateId(),
-    brand: '农夫山泉',
-    fullBuckets: 200,
-    emptyBuckets: 150,
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: generateId(),
-    brand: '怡宝',
-    fullBuckets: 180,
-    emptyBuckets: 120,
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: generateId(),
-    brand: '娃哈哈',
-    fullBuckets: 120,
-    emptyBuckets: 80,
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: generateId(),
-    brand: '百岁山',
-    fullBuckets: 90,
-    emptyBuckets: 60,
-    updatedAt: new Date().toISOString(),
-  },
-];
+export const generateMockInventories = (): Inventory[] => {
+  const createInventory = (brand: string, fullBuckets: number, emptyBuckets: number) => {
+    const id = generateId();
+    const now = Date.now();
+    const DAY = 24 * 60 * 60 * 1000;
+
+    const batches = [
+      {
+        id: generateId(),
+        inventoryId: id,
+        brand,
+        batchNo: `${brand.slice(0, 2)}${dayjs().subtract(75, 'day').format('YYYYMMDD')}`,
+        productionDate: new Date(now - 75 * DAY).toISOString(),
+        quantity: Math.floor(fullBuckets * 0.2),
+        createdAt: new Date(now - 75 * DAY).toISOString(),
+      },
+      {
+        id: generateId(),
+        inventoryId: id,
+        brand,
+        batchNo: `${brand.slice(0, 2)}${dayjs().subtract(30, 'day').format('YYYYMMDD')}`,
+        productionDate: new Date(now - 30 * DAY).toISOString(),
+        quantity: Math.floor(fullBuckets * 0.5),
+        createdAt: new Date(now - 30 * DAY).toISOString(),
+      },
+      {
+        id: generateId(),
+        inventoryId: id,
+        brand,
+        batchNo: `${brand.slice(0, 2)}${dayjs().format('YYYYMMDD')}`,
+        productionDate: new Date(now).toISOString(),
+        quantity: Math.floor(fullBuckets * 0.3),
+        createdAt: new Date(now).toISOString(),
+      },
+    ];
+
+    return {
+      id,
+      brand,
+      fullBuckets: batches.reduce((sum, b) => sum + b.quantity, 0),
+      emptyBuckets,
+      updatedAt: new Date().toISOString(),
+      batches,
+    };
+  };
+
+  return [
+    createInventory('农夫山泉', 200, 150),
+    createInventory('怡宝', 180, 120),
+    createInventory('娃哈哈', 120, 80),
+    createInventory('百岁山', 90, 60),
+  ];
+};
 
 export const generateMockOrders = (customers: Customer[]): Order[] => {
   const now = Date.now();
   
-  const createOrder = (customerIndex: number, brand: string, quantity: number, deliveryTimeWindow: string, status: Order['status'], deliveredBuckets: number, returnedBuckets: number, timeAgo: number, disableFloorFee: boolean = false): Order => {
+  const createOrder = (customerIndex: number, brand: string, quantity: number, deliveryTimeWindow: Order['deliveryTimeWindow'], status: Order['status'], deliveredBuckets: number, returnedBuckets: number, timeAgo: number, disableFloorFee: boolean = false): Order => {
     const customer = customers[customerIndex];
     const pricing = calculatePricing({ customer, quantity, disableFloorFee });
     return {

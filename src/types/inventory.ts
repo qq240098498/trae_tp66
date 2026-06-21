@@ -1,11 +1,25 @@
 export type InventoryLogType = 'purchase' | 'sale' | 'return' | 'scrap' | 'adjust';
 
+export type BatchStatus = 'normal' | 'approaching' | 'discount' | 'expired';
+
+export interface InventoryBatch {
+  id: string;
+  inventoryId: string;
+  brand: string;
+  batchNo: string;
+  productionDate: string;
+  quantity: number;
+  discountPrice?: number;
+  createdAt: string;
+}
+
 export interface Inventory {
   id: string;
   brand: string;
   fullBuckets: number;
   emptyBuckets: number;
   updatedAt: string;
+  batches: InventoryBatch[];
 }
 
 export interface InventoryLog {

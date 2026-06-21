@@ -1,4 +1,4 @@
-import { Card, Button, List, Tag } from 'antd';
+import { Card, Button, List, Tag, Alert } from 'antd';
 import {
   FileTextOutlined,
   TruckOutlined,
@@ -9,6 +9,9 @@ import {
   RightOutlined,
   ClockCircleOutlined,
   MessageOutlined,
+  WarningOutlined,
+  ThunderboltOutlined,
+  ExclamationCircleOutlined,
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -29,7 +32,7 @@ import { StatCard } from '../../components/StatCard';
 import { useOrderStore } from '../../stores/orderStore';
 import { useDeliveryStore } from '../../stores/deliveryStore';
 import { useBucketStore } from '../../stores/bucketStore';
-import { useInventoryStore } from '../../stores/inventoryStore';
+import { useInventoryStore, getBatchRemainingDays, computeBatchStatus } from '../../stores/inventoryStore';
 import { useCustomerStore } from '../../stores/customerStore';
 import { useRecurringOrderStore } from '../../stores/recurringOrderStore';
 import { formatDateTime, dayjs } from '../../utils/date';
@@ -39,9 +42,16 @@ const Dashboard = () => {
   const { orders, getTodayOrders, getOrdersByStatus } = useOrderStore();
   const { staffs, getStaffDeliveries } = useDeliveryStore();
   const { getTodayReturns } = useBucketStore();
-  const { inventories } = useInventoryStore();
+  const { inventories, getApproachingBatches, getDiscountBatches, getExpiredBatches } = useInventoryStore();
   const { getCustomer } = useCustomerStore();
   const { getPendingOrdersByStatus } = useRecurringOrderStore();
+
+  const approachingBatches = getApproachingBatches();
+  const discountBatches = getDiscountBatches();
+  const expiredBatches = getExpiredBatches();
+  const approachingCount = approachingBatches.reduce((sum, b) => sum + b.quantity, 0);
+  const discountCount = discountBatches.reduce((sum, b) => sum + b.quantity, 0);
+  const expiredCount = expiredBatches.reduce((sum, b) => sum + b.quantity, 0);
 
   const todayOrders = getTodayOrders();
   const deliveringOrders = getOrdersByStatus('delivering');
@@ -131,7 +141,43 @@ const Dashboard = () => {
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+      {(approachingCount > 0 || discountCount > 0 || expiredCount > 0) && (
+        <Alert
+          message="库存预警"
+          description={
+            <div className="space-y-1">
+              {approachingCount > 0 && (
+                <div>
+                  <WarningOutlined className="text-orange-500 mr-2" />
+                  有 <strong className="text-orange-600">{approachingCount}</strong> 桶临期水（超过2个月），请优先出货或降价处理
+                </div>
+              )}
+              {discountCount > 0 && (
+                <div>
+                  <ThunderboltOutlined className="text-blue-500 mr-2" />
+                  有 <strong className="text-blue-600">{discountCount}</strong> 桶已标记降价促销
+                </div>
+              )}
+              {expiredCount > 0 && (
+                <div>
+                  <ExclamationCircleOutlined className="text-red-500 mr-2" />
+                  有 <strong className="text-red-600">{expiredCount}</strong> 桶已过期，请及时报废处理
+                </div>
+              )}
+            </div>
+          }
+          type={expiredCount > 0 ? 'error' : approachingCount > 0 ? 'warning' : 'info'}
+          showIcon
+          closable
+          action={
+            <Button size="small" type="primary" onClick={() => navigate('/inventory')}>
+              去处理
+            </Button>
+          }
+        />
+      )}
+
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
         <StatCard
           title="今日订单"
           value={todayOrders.length}
@@ -160,6 +206,26 @@ const Dashboard = () => {
           trend={8}
           color="purple"
         />
+        {approachingCount > 0 && (
+          <StatCard
+            title="临期水库存"
+            value={approachingCount}
+            icon={<WarningOutlined />}
+            color="orange"
+            onClick={() => navigate('/inventory')}
+            className="cursor-pointer"
+          />
+        )}
+        {discountCount > 0 && (
+          <StatCard
+            title="降价促销"
+            value={discountCount}
+            icon={<ThunderboltOutlined />}
+            color="blue"
+            onClick={() => navigate('/inventory')}
+            className="cursor-pointer"
+          />
+        )}
         {pendingSmsOrders.length > 0 && (
           <StatCard
             title="待确认订单"
@@ -173,6 +239,61 @@ const Dashboard = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {(approachingBatches.length > 0 || discountBatches.length > 0 || expiredBatches.length > 0) && (
+          <Card
+            title={
+              <span className="flex items-center gap-2">
+                <WarningOutlined className="text-orange-500" />
+                临期/降价批次
+              </span>
+            }
+            className="border-0 shadow-sm"
+            extra={
+              <Button type="link" onClick={() => navigate('/inventory')}>
+                查看全部 <RightOutlined />
+              </Button>
+            }
+          >
+            <List
+              dataSource={[...expiredBatches, ...discountBatches, ...approachingBatches].slice(0, 5)}
+              renderItem={(batch) => {
+                const remainingDays = getBatchRemainingDays(batch.productionDate);
+                const status = computeBatchStatus(batch);
+                return (
+                  <List.Item className="px-2 -mx-2 py-2">
+                    <List.Item.Meta
+                      title={
+                        <div className="flex items-center justify-between">
+                          <span className="font-medium text-gray-800">
+                            {batch.brand} - {batch.batchNo}
+                          </span>
+                          <Tag
+                            color={
+                              status === 'expired' ? 'red' :
+                              status === 'discount' ? 'blue' : 'orange'
+                            }
+                          >
+                            {status === 'expired' ? '已过期' :
+                             status === 'discount' ? `降价¥${batch.discountPrice}` :
+                             remainingDays <= 0 ? '即将过期' : `剩${remainingDays}天`}
+                          </Tag>
+                        </div>
+                      }
+                      description={
+                        <div className="space-y-1">
+                          <div className="text-sm text-gray-600">
+                            生产日期：{dayjs(batch.productionDate).format('YYYY-MM-DD')} · 库存：{batch.quantity}桶
+                          </div>
+                        </div>
+                      }
+                    />
+                  </List.Item>
+                );
+              }}
+            />
+          </Card>
+        )}
+
         <Card
           title="待办事项"
           className="border-0 shadow-sm"

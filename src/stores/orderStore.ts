@@ -8,6 +8,7 @@ import { useDeliveryStore } from './deliveryStore';
 import { findNearestDeliveryStaff } from '../utils/distance';
 import { calculatePricing } from '../utils/pricing';
 import { useSystemConfigStore } from './systemConfigStore';
+import { useInventoryStore, computeBatchStatus } from './inventoryStore';
 
 interface OrderState {
   orders: Order[];
@@ -40,16 +41,25 @@ export const useOrderStore = create<OrderState>()(
         const config = useSystemConfigStore.getState().config;
         const disableFloorFee = orderData.disableFloorFee || false;
 
+        const inventoryStore = useInventoryStore.getState();
+
+        const brandBatches = inventoryStore.getBrandBatches(orderData.brand);
+        const discountBatch = brandBatches.find((b) => computeBatchStatus(b) === 'discount' && b.discountPrice);
+        const effectiveUnitPrice = discountBatch?.discountPrice || config.unitPrice;
+        const discountApplied = !!discountBatch;
+
         const pricing = customer 
           ? calculatePricing({
               customer,
               quantity: orderData.quantity,
-              unitPrice: config.unitPrice,
+              unitPrice: effectiveUnitPrice,
               floorFeeRate: config.floorFeeRate,
               freeFloorThreshold: config.freeFloorThreshold,
               disableFloorFee,
             })
-          : { unitPrice: config.unitPrice, floorFeeRate: config.floorFeeRate, floorFee: 0, totalAmount: orderData.quantity * config.unitPrice };
+          : { unitPrice: effectiveUnitPrice, floorFeeRate: config.floorFeeRate, floorFee: 0, totalAmount: orderData.quantity * effectiveUnitPrice };
+
+        const { batchIds, consumed } = inventoryStore.consumeBatchesForOrder(orderData.brand, orderData.quantity);
 
         const newOrder: Order = {
           ...orderData,
@@ -61,6 +71,8 @@ export const useOrderStore = create<OrderState>()(
           returnedBuckets: 0,
           createdAt: new Date().toISOString(),
           source: orderData.source || 'manual',
+          batchIds,
+          discountApplied,
         };
 
         set({ orders: [...get().orders, newOrder] });

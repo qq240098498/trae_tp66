@@ -147,6 +147,7 @@ export const useRecurringOrderStore = create<RecurringOrderState>()(
           brand: pendingOrder.brand,
           quantity: pendingOrder.quantity,
           deliveryTimeWindow: pendingOrder.deliveryTimeWindow,
+          disableFloorFee: false,
           source: 'auto',
           pendingOrderId: pendingOrder.id,
         });

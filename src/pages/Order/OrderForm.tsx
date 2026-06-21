@@ -4,12 +4,13 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { PageHeader } from '../../components/PageHeader';
 import { useOrderStore } from '../../stores/orderStore';
 import { useCustomerStore } from '../../stores/customerStore';
-import { useInventoryStore } from '../../stores/inventoryStore';
+import { useInventoryStore, getBatchRemainingDays, computeBatchStatus } from '../../stores/inventoryStore';
 import { useSystemConfigStore } from '../../stores/systemConfigStore';
 import { OrderFormData, DELIVERY_TIME_WINDOWS } from '../../types';
-import { ArrowLeftOutlined } from '@ant-design/icons';
+import { ArrowLeftOutlined, WarningOutlined, ThunderboltOutlined } from '@ant-design/icons';
 import { findNearestDeliveryStaff } from '../../utils/distance';
 import { calculatePricing, shouldAddFloorFee, parseFloor } from '../../utils/pricing';
+import { dayjs } from '../../utils/date';
 
 const BRANDS = ['农夫山泉', '怡宝', '娃哈哈', '百岁山', '昆仑山'];
 
@@ -24,10 +25,24 @@ const OrderForm = () => {
   const { config } = useSystemConfigStore();
 
   const selectedCustomerId = Form.useWatch('customerId', form);
+  const selectedBrand = Form.useWatch('brand', form);
   const quantity = Form.useWatch('quantity', form) || 0;
   const disableFloorFee = Form.useWatch('disableFloorFee', form) || false;
 
   const selectedCustomer = selectedCustomerId ? getCustomer(selectedCustomerId) : null;
+
+  const { getBrandBatches } = useInventoryStore();
+
+  const brandBatches = selectedBrand ? getBrandBatches(selectedBrand) : [];
+  const approachingBatches = brandBatches.filter((b) => computeBatchStatus(b) === 'approaching');
+  const discountBatches = brandBatches.filter((b) => computeBatchStatus(b) === 'discount');
+  const approachingCount = approachingBatches.reduce((sum, b) => sum + b.quantity, 0);
+  const discountCount = discountBatches.reduce((sum, b) => sum + b.quantity, 0);
+  const lowestDiscountPrice = discountBatches.length > 0
+    ? Math.min(...discountBatches.map((b) => b.discountPrice || Infinity))
+    : null;
+
+  const effectiveUnitPrice = lowestDiscountPrice || config.unitPrice;
 
   const pricing = useMemo(() => {
     if (!selectedCustomer || quantity <= 0) {
@@ -36,12 +51,12 @@ const OrderForm = () => {
     return calculatePricing({
       customer: selectedCustomer,
       quantity,
-      unitPrice: config.unitPrice,
+      unitPrice: effectiveUnitPrice,
       floorFeeRate: config.floorFeeRate,
       freeFloorThreshold: config.freeFloorThreshold,
       disableFloorFee,
     });
-  }, [selectedCustomer, quantity, config, disableFloorFee]);
+  }, [selectedCustomer, quantity, effectiveUnitPrice, config, disableFloorFee]);
 
   const floorFeeInfo = useMemo(() => {
     if (!selectedCustomer) return null;
@@ -139,6 +154,26 @@ const OrderForm = () => {
                   );
                 })}
               </Select>
+              {selectedBrand && (approachingCount > 0 || discountCount > 0) && (
+                <div className="mt-2 space-y-1">
+                  {discountCount > 0 && (
+                    <Alert
+                      type="info"
+                      showIcon
+                      icon={<ThunderboltOutlined />}
+                      message={`该品牌有 ${discountCount} 桶降价促销中，单价 ¥${lowestDiscountPrice}，将优先出库`}
+                    />
+                  )}
+                  {approachingCount > 0 && discountCount === 0 && (
+                    <Alert
+                      type="warning"
+                      showIcon
+                      icon={<WarningOutlined />}
+                      message={`该品牌有 ${approachingCount} 桶临期水，建议优先出货或设置降价促销`}
+                    />
+                  )}
+                </div>
+              )}
             </Form.Item>
             <Form.Item
               name="quantity"
@@ -174,6 +209,15 @@ const OrderForm = () => {
           {pricing && (
             <Card size="small" className="mb-4 bg-gray-50 border-dashed">
               <h4 className="font-medium text-gray-800 mb-3">费用明细</h4>
+              {discountCount > 0 && (
+                <Alert
+                  message={`已自动应用临期水降价，单价 ¥${lowestDiscountPrice}（原价 ¥${config.unitPrice}）`}
+                  type="success"
+                  showIcon
+                  icon={<ThunderboltOutlined />}
+                  className="mb-3"
+                />
+              )}
               {disableFloorFee && (
                 <Alert
                   message="已手动免除爬楼费"
