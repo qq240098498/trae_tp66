@@ -1,5 +1,5 @@
-import { useEffect } from 'react';
-import { Form, Select, InputNumber, Button, Space, message, Card } from 'antd';
+import { useEffect, useMemo } from 'react';
+import { Form, Select, InputNumber, Button, Space, message, Card, Descriptions, Tag } from 'antd';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { PageHeader } from '../../components/PageHeader';
 import { useOrderStore } from '../../stores/orderStore';
@@ -8,6 +8,7 @@ import { useInventoryStore } from '../../stores/inventoryStore';
 import { OrderFormData, DELIVERY_TIME_WINDOWS } from '../../types';
 import { ArrowLeftOutlined } from '@ant-design/icons';
 import { findNearestDeliveryStaff } from '../../utils/distance';
+import { calculatePricing, shouldAddFloorFee, parseFloor, FREE_FLOOR_THRESHOLD } from '../../utils/pricing';
 
 const BRANDS = ['农夫山泉', '怡宝', '娃哈哈', '百岁山', '昆仑山'];
 
@@ -19,6 +20,29 @@ const OrderForm = () => {
   const { addOrder } = useOrderStore();
   const { customers, getCustomer } = useCustomerStore();
   const { inventories } = useInventoryStore();
+
+  const selectedCustomerId = Form.useWatch('customerId', form);
+  const quantity = Form.useWatch('quantity', form) || 0;
+
+  const selectedCustomer = selectedCustomerId ? getCustomer(selectedCustomerId) : null;
+
+  const pricing = useMemo(() => {
+    if (!selectedCustomer || quantity <= 0) {
+      return null;
+    }
+    return calculatePricing({ customer: selectedCustomer, quantity });
+  }, [selectedCustomer, quantity]);
+
+  const floorFeeInfo = useMemo(() => {
+    if (!selectedCustomer) return null;
+    const floor = parseFloor(selectedCustomer.floor);
+    const needsFloorFee = shouldAddFloorFee(selectedCustomer);
+    return {
+      floor,
+      needsFloorFee,
+      hasElevator: selectedCustomer.hasElevator,
+    };
+  }, [selectedCustomer]);
 
   useEffect(() => {
     if (customerId) {
@@ -128,6 +152,50 @@ const OrderForm = () => {
               ))}
             </Select>
           </Form.Item>
+
+          {pricing && (
+            <Card size="small" className="mb-4 bg-gray-50 border-dashed">
+              <h4 className="font-medium text-gray-800 mb-3">费用明细</h4>
+              <Descriptions column={2} size="small">
+                <Descriptions.Item label="商品单价">
+                  ¥{pricing.unitPrice}/桶
+                </Descriptions.Item>
+                <Descriptions.Item label="商品费用">
+                  ¥{pricing.unitPrice * quantity}
+                </Descriptions.Item>
+                <Descriptions.Item label="楼层信息">
+                  <span className={floorFeeInfo?.needsFloorFee ? 'text-orange-600' : 'text-gray-600'}>
+                    {floorFeeInfo?.floor}层
+                    {floorFeeInfo?.hasElevator ? ' (有电梯)' : ' (无电梯)'}
+                  </span>
+                </Descriptions.Item>
+                <Descriptions.Item label="爬楼费">
+                  {pricing.floorFee > 0 ? (
+                    <span className="text-orange-600 font-medium">
+                      +¥{pricing.floorFee}
+                      <Tag color="orange" className="ml-2">
+                        {parseFloor(selectedCustomer!.floor) - FREE_FLOOR_THRESHOLD}层 × ¥{pricing.floorFeeRate}/层 × {quantity}桶
+                      </Tag>
+                    </span>
+                  ) : (
+                    <span className="text-gray-400">
+                      {floorFeeInfo?.needsFloorFee 
+                        ? '需收取' 
+                        : floorFeeInfo?.hasElevator 
+                          ? '免爬楼费（有电梯）' 
+                          : `免爬楼费（${FREE_FLOOR_THRESHOLD}层及以下）`}
+                    </span>
+                  )}
+                </Descriptions.Item>
+              </Descriptions>
+              <div className="mt-3 pt-3 border-t border-gray-200 flex justify-between items-center">
+                <span className="text-gray-600">合计金额</span>
+                <span className="text-2xl font-bold text-blue-600">
+                  ¥{pricing.totalAmount}
+                </span>
+              </div>
+            </Card>
+          )}
 
           <Form.Item className="mb-0">
             <Space className="w-full justify-end">

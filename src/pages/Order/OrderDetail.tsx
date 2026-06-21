@@ -211,9 +211,22 @@ const OrderDetail = () => {
           <Descriptions.Item label="联系电话">{customer.phone}</Descriptions.Item>
           <Descriptions.Item label="配送地址" span={2}>
             {customer.address} {customer.floor}
+            {customer.hasElevator ? ' (有电梯)' : ' (无电梯)'}
           </Descriptions.Item>
           <Descriptions.Item label="品牌">{order.brand}</Descriptions.Item>
           <Descriptions.Item label="数量">{order.quantity} 桶</Descriptions.Item>
+          <Descriptions.Item label="商品单价">¥{order.unitPrice}/桶</Descriptions.Item>
+          <Descriptions.Item label="商品费用">¥{order.unitPrice * order.quantity}</Descriptions.Item>
+          <Descriptions.Item label="爬楼费">
+            {order.floorFee > 0 ? (
+              <span className="text-orange-600 font-medium">+¥{order.floorFee}</span>
+            ) : (
+              <span className="text-gray-400">¥0</span>
+            )}
+          </Descriptions.Item>
+          <Descriptions.Item label="合计金额">
+            <span className="text-blue-600 font-bold text-lg">¥{order.totalAmount}</span>
+          </Descriptions.Item>
           <Descriptions.Item label="配送时间窗口">
             <Tag color="blue">{order.deliveryTimeWindow}</Tag>
           </Descriptions.Item>

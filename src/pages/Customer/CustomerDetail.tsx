@@ -215,7 +215,14 @@ const CustomerDetail = () => {
             <Descriptions column={3} size="small">
               <Descriptions.Item label="联系电话">{customer.phone}</Descriptions.Item>
               <Descriptions.Item label="详细地址">{customer.address}</Descriptions.Item>
-              <Descriptions.Item label="楼层/门牌">{customer.floor}</Descriptions.Item>
+              <Descriptions.Item label="楼层/门牌">
+                {customer.floor}
+                {customer.hasElevator ? (
+                  <Tag color="green" className="ml-2">有电梯</Tag>
+                ) : (
+                  <Tag color="orange" className="ml-2">无电梯</Tag>
+                )}
+              </Descriptions.Item>
               <Descriptions.Item label="常订品牌">
                 <Tag color="blue">{customer.preferredBrand}</Tag>
               </Descriptions.Item>

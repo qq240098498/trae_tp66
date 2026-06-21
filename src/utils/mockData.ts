@@ -1,6 +1,7 @@
 import { generateId } from './id';
 import { Customer, DeliveryStaff, Inventory, Order, BucketReturn, Delivery } from '../types';
 import { dayjs } from './date';
+import { calculatePricing, DEFAULT_UNIT_PRICE, DEFAULT_FLOOR_FEE_RATE } from './pricing';
 
 const baseLat = 39.9042;
 const baseLon = 116.4074;
@@ -14,6 +15,7 @@ export const generateMockCustomers = (): Customer[] => [
     phone: '13800138001',
     address: '阳光小区1号楼2单元',
     floor: '501',
+    hasElevator: false,
     preferredBrand: '农夫山泉',
     emptyBuckets: 3,
     depositBuckets: 5,
@@ -36,6 +38,7 @@ export const generateMockCustomers = (): Customer[] => [
     phone: '13800138002',
     address: '幸福花园3号楼1单元',
     floor: '302',
+    hasElevator: true,
     preferredBrand: '怡宝',
     emptyBuckets: 2,
     depositBuckets: 3,
@@ -58,6 +61,7 @@ export const generateMockCustomers = (): Customer[] => [
     phone: '13800138003',
     address: '锦绣家园5号楼3单元',
     floor: '805',
+    hasElevator: false,
     preferredBrand: '娃哈哈',
     emptyBuckets: 5,
     depositBuckets: 8,
@@ -80,6 +84,7 @@ export const generateMockCustomers = (): Customer[] => [
     phone: '13800138004',
     address: '丽景苑2号楼1单元',
     floor: '1001',
+    hasElevator: true,
     preferredBrand: '农夫山泉',
     emptyBuckets: 1,
     depositBuckets: 2,
@@ -93,6 +98,7 @@ export const generateMockCustomers = (): Customer[] => [
     phone: '13800138005',
     address: '金茂府6号楼2单元',
     floor: '1503',
+    hasElevator: true,
     preferredBrand: '百岁山',
     emptyBuckets: 4,
     depositBuckets: 6,
@@ -168,62 +174,33 @@ export const generateMockInventories = (): Inventory[] => [
 
 export const generateMockOrders = (customers: Customer[]): Order[] => {
   const now = Date.now();
+  
+  const createOrder = (customerIndex: number, brand: string, quantity: number, deliveryTimeWindow: string, status: Order['status'], deliveredBuckets: number, returnedBuckets: number, timeAgo: number): Order => {
+    const customer = customers[customerIndex];
+    const pricing = calculatePricing({ customer, quantity });
+    return {
+      id: generateId(),
+      customerId: customer.id,
+      brand,
+      quantity,
+      unitPrice: pricing.unitPrice,
+      floorFeeRate: pricing.floorFeeRate,
+      floorFee: pricing.floorFee,
+      totalAmount: pricing.totalAmount,
+      deliveryTimeWindow,
+      status,
+      deliveredBuckets,
+      returnedBuckets,
+      createdAt: new Date(now - timeAgo).toISOString(),
+    };
+  };
+
   return [
-    {
-      id: generateId(),
-      customerId: customers[0].id,
-      brand: '农夫山泉',
-      quantity: 2,
-      deliveryTimeWindow: '14:00-16:00',
-      status: 'pending',
-      deliveredBuckets: 0,
-      returnedBuckets: 0,
-      createdAt: new Date(now - 30 * 60 * 1000).toISOString(),
-    },
-    {
-      id: generateId(),
-      customerId: customers[1].id,
-      brand: '怡宝',
-      quantity: 3,
-      deliveryTimeWindow: '16:00-18:00',
-      status: 'delivering',
-      deliveredBuckets: 0,
-      returnedBuckets: 0,
-      createdAt: new Date(now - 2 * 60 * 60 * 1000).toISOString(),
-    },
-    {
-      id: generateId(),
-      customerId: customers[2].id,
-      brand: '娃哈哈',
-      quantity: 5,
-      deliveryTimeWindow: '10:00-12:00',
-      status: 'completed',
-      deliveredBuckets: 5,
-      returnedBuckets: 5,
-      createdAt: new Date(now - 24 * 60 * 60 * 1000).toISOString(),
-    },
-    {
-      id: generateId(),
-      customerId: customers[3].id,
-      brand: '农夫山泉',
-      quantity: 1,
-      deliveryTimeWindow: '08:00-10:00',
-      status: 'completed',
-      deliveredBuckets: 1,
-      returnedBuckets: 1,
-      createdAt: new Date(now - 48 * 60 * 60 * 1000).toISOString(),
-    },
-    {
-      id: generateId(),
-      customerId: customers[4].id,
-      brand: '百岁山',
-      quantity: 4,
-      deliveryTimeWindow: '18:00-20:00',
-      status: 'assigned',
-      deliveredBuckets: 0,
-      returnedBuckets: 0,
-      createdAt: new Date(now - 1 * 60 * 60 * 1000).toISOString(),
-    },
+    createOrder(0, '农夫山泉', 2, '14:00-16:00', 'pending', 0, 0, 30 * 60 * 1000),
+    createOrder(1, '怡宝', 3, '16:00-18:00', 'delivering', 0, 0, 2 * 60 * 60 * 1000),
+    createOrder(2, '娃哈哈', 5, '10:00-12:00', 'completed', 5, 5, 24 * 60 * 60 * 1000),
+    createOrder(3, '农夫山泉', 1, '08:00-10:00', 'completed', 1, 1, 48 * 60 * 60 * 1000),
+    createOrder(4, '百岁山', 4, '18:00-20:00', 'assigned', 0, 0, 1 * 60 * 60 * 1000),
   ];
 };
 

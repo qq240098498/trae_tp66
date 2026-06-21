@@ -6,6 +6,7 @@ import { generateMockOrders } from '../utils/mockData';
 import { useCustomerStore } from './customerStore';
 import { useDeliveryStore } from './deliveryStore';
 import { findNearestDeliveryStaff } from '../utils/distance';
+import { calculatePricing } from '../utils/pricing';
 
 interface OrderState {
   orders: Order[];
@@ -34,8 +35,15 @@ export const useOrderStore = create<OrderState>()(
         }
       },
       addOrder: (orderData) => {
+        const customer = useCustomerStore.getState().getCustomer(orderData.customerId);
+        
+        const pricing = customer 
+          ? calculatePricing({ customer, quantity: orderData.quantity })
+          : { unitPrice: 20, floorFeeRate: 2, floorFee: 0, totalAmount: orderData.quantity * 20 };
+
         const newOrder: Order = {
           ...orderData,
+          ...pricing,
           id: generateId(),
           status: 'pending',
           deliveredBuckets: 0,
@@ -46,7 +54,6 @@ export const useOrderStore = create<OrderState>()(
 
         set({ orders: [...get().orders, newOrder] });
 
-        const customer = useCustomerStore.getState().getCustomer(orderData.customerId);
         const staffs = useDeliveryStore.getState().staffs;
         
         let autoAssigned = false;

@@ -15,6 +15,10 @@ export interface Order {
   customerId: string;
   brand: string;
   quantity: number;
+  unitPrice: number;
+  floorFeeRate: number;
+  floorFee: number;
+  totalAmount: number;
   deliveryTimeWindow: DeliveryTimeWindow;
   status: OrderStatus;
   deliveryId?: string;
@@ -30,4 +34,4 @@ export const ORDER_SOURCE_LABELS: Record<string, string> = {
   auto: '自动下单',
 };
 
-export type OrderFormData = Omit<Order, 'id' | 'status' | 'deliveredBuckets' | 'returnedBuckets' | 'createdAt'>;
+export type OrderFormData = Omit<Order, 'id' | 'status' | 'deliveredBuckets' | 'returnedBuckets' | 'createdAt' | 'unitPrice' | 'floorFeeRate' | 'floorFee' | 'totalAmount'>;

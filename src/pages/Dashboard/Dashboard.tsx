@@ -59,7 +59,7 @@ const Dashboard = () => {
 
   const todayRevenue = orders
     .filter((o) => dayjs(o.createdAt).isSame(dayjs(), 'day') && o.status !== 'cancelled')
-    .reduce((sum, o) => sum + o.quantity * 20, 0);
+    .reduce((sum, o) => sum + (o.totalAmount || o.quantity * 20), 0);
 
   const last7DaysData = Array.from({ length: 7 }, (_, i) => {
     const date = dayjs().subtract(6 - i, 'day');

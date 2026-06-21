@@ -6,6 +6,7 @@ export interface Customer {
   phone: string;
   address: string;
   floor: string;
+  hasElevator: boolean;
   preferredBrand: string;
   emptyBuckets: number;
   depositBuckets: number;

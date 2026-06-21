@@ -87,7 +87,7 @@ const CustomerForm = ({ initialData, onSuccess, onCancel }: CustomerFormProps) =
               recurringQuantity: initialData.recurringSchedule?.quantity || 2,
               recurringTimeWindow: initialData.recurringSchedule?.preferredTimeWindow || '14:00-16:00',
             }
-          : { emptyBuckets: 0, depositBuckets: 0, preferredBrand: '农夫山泉', recurringEnabled: false, recurringBrand: '农夫山泉' }
+          : { emptyBuckets: 0, depositBuckets: 0, preferredBrand: '农夫山泉', hasElevator: true, recurringEnabled: false, recurringBrand: '农夫山泉' }
       }
     >
       <div className="grid grid-cols-2 gap-4">
@@ -127,6 +127,17 @@ const CustomerForm = ({ initialData, onSuccess, onCancel }: CustomerFormProps) =
           <Input placeholder="如：501" />
         </Form.Item>
         <Form.Item
+          name="hasElevator"
+          label="是否有电梯"
+          valuePropName="checked"
+          rules={[{ required: true, message: '请选择是否有电梯' }]}
+        >
+          <Switch checkedChildren="有" unCheckedChildren="无" />
+        </Form.Item>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <Form.Item
           name="preferredBrand"
           label="常订品牌"
           rules={[{ required: true, message: '请选择常订品牌' }]}
@@ -139,6 +150,7 @@ const CustomerForm = ({ initialData, onSuccess, onCancel }: CustomerFormProps) =
             ))}
           </Select>
         </Form.Item>
+        <div></div>
       </div>
 
       <div className="grid grid-cols-2 gap-4">
