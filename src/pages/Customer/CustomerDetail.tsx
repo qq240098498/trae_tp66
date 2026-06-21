@@ -246,6 +246,9 @@ const CustomerDetail = () => {
               </Descriptions.Item>
               {customer.recurringSchedule?.enabled && (
                 <>
+                  <Descriptions.Item label="水品牌">
+                    {customer.recurringSchedule.brand}
+                  </Descriptions.Item>
                   <Descriptions.Item label="下单周期">
                     每 {customer.recurringSchedule.intervalDays} 天 {customer.recurringSchedule.quantity} 桶
                   </Descriptions.Item>

@@ -65,10 +65,10 @@ export const useRecurringOrderStore = create<RecurringOrderState>()(
           get().addLog(customerId, 'schedule_disabled', '已停用周期下单');
         } else if (!existingSchedule?.enabled && schedule.enabled) {
           get().addLog(customerId, 'schedule_created', 
-            `已启用周期下单：每${schedule.intervalDays}天${schedule.quantity}桶，下次下单：${dayjs(schedule.nextOrderDate).format('YYYY-MM-DD')}`);
+            `已启用周期下单：${schedule.brand} 每${schedule.intervalDays}天${schedule.quantity}桶，下次下单：${dayjs(schedule.nextOrderDate).format('YYYY-MM-DD')}`);
         } else if (existingSchedule?.enabled && schedule.enabled) {
           get().addLog(customerId, 'schedule_updated', 
-            `已更新周期下单：每${schedule.intervalDays}天${schedule.quantity}桶，下次下单：${dayjs(schedule.nextOrderDate).format('YYYY-MM-DD')}`);
+            `已更新周期下单：${schedule.brand} 每${schedule.intervalDays}天${schedule.quantity}桶，下次下单：${dayjs(schedule.nextOrderDate).format('YYYY-MM-DD')}`);
         }
       },
 
@@ -104,7 +104,7 @@ export const useRecurringOrderStore = create<RecurringOrderState>()(
             const pendingOrder: PendingAutoOrder = {
               id: generateId(),
               customerId: customer.id,
-              brand: customer.preferredBrand,
+              brand: schedule.brand,
               quantity: schedule.quantity,
               deliveryTimeWindow: schedule.preferredTimeWindow,
               status: 'pending_sms',
@@ -115,11 +115,11 @@ export const useRecurringOrderStore = create<RecurringOrderState>()(
 
             newPendingOrders.push(pendingOrder);
             get().addLog(customer.id, 'order_generated', 
-              `系统已生成待确认订单：${customer.preferredBrand} ${schedule.quantity}桶`);
+              `系统已生成待确认订单：${schedule.brand} ${schedule.quantity}桶`);
             get().addLog(customer.id, 'sms_sent', 
               `已发送确认短信至 ${customer.phone}，请在${SMS_EXPIRE_HOURS}小时内回复确认`);
             
-            console.log(`📱 [模拟短信] 发送至 ${customer.phone}：【桶装水配送】您的周期订单已生成：${customer.preferredBrand} ${schedule.quantity}桶，配送时间 ${schedule.preferredTimeWindow}。回复"确认"下单，回复"取消"跳过本次。`);
+            console.log(`📱 [模拟短信] 发送至 ${customer.phone}：【桶装水配送】您的周期订单已生成：${schedule.brand} ${schedule.quantity}桶，配送时间 ${schedule.preferredTimeWindow}。回复"确认"下单，回复"取消"跳过本次。`);
           }
         });
 

@@ -24,6 +24,8 @@ const PENDING_STATUS_LABELS: Record<PendingOrderStatus, string> = {
   expired: '已超时',
 };
 
+const BRANDS = ['农夫山泉', '怡宝', '娃哈哈', '百岁山', '昆仑山', '其他'];
+
 const RecurringOrderList = () => {
   const navigate = useNavigate();
   const { customers } = useCustomerStore();
@@ -44,6 +46,16 @@ const RecurringOrderList = () => {
   const [form] = Form.useForm();
   const [addForm] = Form.useForm();
   const [, forceUpdate] = useState(0);
+  const selectedCustomerId = Form.useWatch('customerId', addForm);
+
+  useEffect(() => {
+    if (selectedCustomerId && addModalVisible) {
+      const customer = customers.find((c) => c.id === selectedCustomerId);
+      if (customer) {
+        addForm.setFieldsValue({ brand: customer.preferredBrand });
+      }
+    }
+  }, [selectedCustomerId, addModalVisible, customers, addForm]);
 
   useEffect(() => {
     checkAndGenerateOrders();
@@ -64,6 +76,7 @@ const RecurringOrderList = () => {
   const handleEditSchedule = (customer: Customer) => {
     setEditingCustomer(customer);
     form.setFieldsValue({
+      brand: customer.recurringSchedule?.brand || customer.preferredBrand,
       intervalDays: customer.recurringSchedule?.intervalDays || 3,
       quantity: customer.recurringSchedule?.quantity || 2,
       preferredTimeWindow: customer.recurringSchedule?.preferredTimeWindow || '14:00-16:00',
@@ -77,6 +90,7 @@ const RecurringOrderList = () => {
       if (editingCustomer && editingCustomer.recurringSchedule) {
         updateCustomerSchedule(editingCustomer.id, {
           ...editingCustomer.recurringSchedule,
+          brand: values.brand,
           intervalDays: values.intervalDays,
           quantity: values.quantity,
           preferredTimeWindow: values.preferredTimeWindow,
@@ -97,6 +111,7 @@ const RecurringOrderList = () => {
   const handleAddSchedule = () => {
     addForm.resetFields();
     addForm.setFieldsValue({
+      brand: '农夫山泉',
       intervalDays: 3,
       quantity: 2,
       preferredTimeWindow: '14:00-16:00',
@@ -107,7 +122,7 @@ const RecurringOrderList = () => {
   const handleSaveAddSchedule = async () => {
     try {
       const values = await addForm.validateFields();
-      const { getCustomer, updateCustomer } = useCustomerStore.getState();
+      const { getCustomer } = useCustomerStore.getState();
       const customer = getCustomer(values.customerId);
       
       if (!customer) {
@@ -117,6 +132,7 @@ const RecurringOrderList = () => {
 
       updateCustomerSchedule(values.customerId, {
         enabled: true,
+        brand: values.brand,
         intervalDays: values.intervalDays,
         quantity: values.quantity,
         preferredTimeWindow: values.preferredTimeWindow,
@@ -255,8 +271,8 @@ const RecurringOrderList = () => {
         if (!s) return '-';
         return (
           <div>
-            <div className="font-medium">每 {s.intervalDays} 天 {s.quantity} 桶</div>
-            <div className="text-sm text-gray-500">{s.preferredTimeWindow} · {record.preferredBrand}</div>
+            <div className="font-medium">{s.brand} · 每 {s.intervalDays} 天 {s.quantity} 桶</div>
+            <div className="text-sm text-gray-500">{s.preferredTimeWindow}</div>
           </div>
         );
       },
@@ -506,19 +522,40 @@ const RecurringOrderList = () => {
       >
         <Form form={form} layout="vertical">
           <Form.Item
-            name="intervalDays"
-            label="间隔天数"
-            rules={[{ required: true, message: '请输入间隔天数' }]}
+            name="brand"
+            label="水品牌"
+            rules={[{ required: true, message: '请选择水品牌' }]}
           >
-            <InputNumber min={1} max={30} className="w-full" addonAfter="天" />
+            <Select placeholder="请选择水品牌">
+              {BRANDS.map((b) => (
+                <Select.Option key={b} value={b}>
+                  {b}
+                </Select.Option>
+              ))}
+            </Select>
           </Form.Item>
-          <Form.Item
-            name="quantity"
-            label="每次数量"
-            rules={[{ required: true, message: '请输入每次数量' }]}
-          >
-            <InputNumber min={1} max={20} className="w-full" addonAfter="桶" />
-          </Form.Item>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item
+                name="intervalDays"
+                label="间隔天数"
+                rules={[{ required: true, message: '请输入间隔天数' }]}
+                className="mb-0"
+              >
+                <InputNumber min={1} max={30} className="w-full" addonAfter="天" />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item
+                name="quantity"
+                label="每次数量"
+                rules={[{ required: true, message: '请输入每次数量' }]}
+                className="mb-0"
+              >
+                <InputNumber min={1} max={20} className="w-full" addonAfter="桶" />
+              </Form.Item>
+            </Col>
+          </Row>
           <Form.Item
             name="preferredTimeWindow"
             label="配送时段"
@@ -564,12 +601,26 @@ const RecurringOrderList = () => {
                 }))}
             />
           </Form.Item>
+          <Form.Item
+            name="brand"
+            label="水品牌"
+            rules={[{ required: true, message: '请选择水品牌' }]}
+          >
+            <Select placeholder="请选择水品牌">
+              {BRANDS.map((b) => (
+                <Select.Option key={b} value={b}>
+                  {b}
+                </Select.Option>
+              ))}
+            </Select>
+          </Form.Item>
           <Row gutter={16}>
             <Col span={12}>
               <Form.Item
                 name="intervalDays"
                 label="间隔天数"
                 rules={[{ required: true, message: '请输入间隔天数' }]}
+                className="mb-0"
               >
                 <InputNumber min={1} max={30} className="w-full" addonAfter="天" />
               </Form.Item>
@@ -579,6 +630,7 @@ const RecurringOrderList = () => {
                 name="quantity"
                 label="每次数量"
                 rules={[{ required: true, message: '请输入每次数量' }]}
+                className="mb-0"
               >
                 <InputNumber min={1} max={20} className="w-full" addonAfter="桶" />
               </Form.Item>

@@ -4,6 +4,7 @@ export interface RecurringSchedule {
   enabled: boolean;
   intervalDays: number;
   quantity: number;
+  brand: string;
   preferredTimeWindow: DeliveryTimeWindow;
   lastOrderDate?: string;
   nextOrderDate: string;

@@ -22,6 +22,7 @@ export const generateMockCustomers = (): Customer[] => [
     createdAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
     recurringSchedule: {
       enabled: true,
+      brand: '农夫山泉',
       intervalDays: 3,
       quantity: 2,
       preferredTimeWindow: '14:00-16:00',
@@ -43,6 +44,7 @@ export const generateMockCustomers = (): Customer[] => [
     createdAt: new Date(Date.now() - 25 * 24 * 60 * 60 * 1000).toISOString(),
     recurringSchedule: {
       enabled: true,
+      brand: '怡宝',
       intervalDays: 7,
       quantity: 3,
       preferredTimeWindow: '10:00-12:00',
@@ -64,11 +66,12 @@ export const generateMockCustomers = (): Customer[] => [
     createdAt: new Date(Date.now() - 20 * 24 * 60 * 60 * 1000).toISOString(),
     recurringSchedule: {
       enabled: true,
+      brand: '娃哈哈',
       intervalDays: 5,
       quantity: 4,
       preferredTimeWindow: '16:00-18:00',
       lastOrderDate: dayjs().subtract(5, 'day').toISOString(),
-      nextOrderDate: dayjs().add(0, 'day').toISOString(),
+      nextOrderDate: dayjs().toISOString(),
     },
   },
   {

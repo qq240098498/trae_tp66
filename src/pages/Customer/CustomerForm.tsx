@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { Form, Input, InputNumber, Select, Button, Space, message, Switch, Card, Row, Col } from 'antd';
 import { useCustomerStore } from '../../stores/customerStore';
 import { Customer, CustomerFormData, DELIVERY_TIME_WINDOWS } from '../../types';
@@ -16,12 +17,20 @@ interface FormValues extends CustomerFormData {
   recurringIntervalDays?: number;
   recurringQuantity?: number;
   recurringTimeWindow?: any;
+  recurringBrand?: string;
 }
 
 const CustomerForm = ({ initialData, onSuccess, onCancel }: CustomerFormProps) => {
   const [form] = Form.useForm<FormValues>();
   const { addCustomer, updateCustomer } = useCustomerStore();
   const recurringEnabled = Form.useWatch('recurringEnabled', form);
+  const preferredBrand = Form.useWatch('preferredBrand', form);
+
+  useEffect(() => {
+    if (preferredBrand && !initialData?.recurringSchedule?.brand) {
+      form.setFieldsValue({ recurringBrand: preferredBrand });
+    }
+  }, [preferredBrand, form, initialData]);
 
   const handleSubmit = async () => {
     try {
@@ -30,6 +39,7 @@ const CustomerForm = ({ initialData, onSuccess, onCancel }: CustomerFormProps) =
       const recurringSchedule = values.recurringEnabled
         ? {
             enabled: true,
+            brand: values.recurringBrand || values.preferredBrand || '农夫山泉',
             intervalDays: values.recurringIntervalDays || 3,
             quantity: values.recurringQuantity || 2,
             preferredTimeWindow: values.recurringTimeWindow || '14:00-16:00',
@@ -41,7 +51,7 @@ const CustomerForm = ({ initialData, onSuccess, onCancel }: CustomerFormProps) =
         ? { ...initialData.recurringSchedule, enabled: false }
         : undefined;
 
-      const { recurringEnabled, recurringIntervalDays, recurringQuantity, recurringTimeWindow, ...customerData } = values;
+      const { recurringEnabled, recurringIntervalDays, recurringQuantity, recurringTimeWindow, recurringBrand, ...customerData } = values;
 
       if (initialData) {
         updateCustomer(initialData.id, { ...customerData, recurringSchedule });
@@ -72,11 +82,12 @@ const CustomerForm = ({ initialData, onSuccess, onCancel }: CustomerFormProps) =
           ? {
               ...initialData,
               recurringEnabled: initialData.recurringSchedule?.enabled || false,
+              recurringBrand: initialData.recurringSchedule?.brand || initialData.preferredBrand,
               recurringIntervalDays: initialData.recurringSchedule?.intervalDays || 3,
               recurringQuantity: initialData.recurringSchedule?.quantity || 2,
               recurringTimeWindow: initialData.recurringSchedule?.preferredTimeWindow || '14:00-16:00',
             }
-          : { emptyBuckets: 0, depositBuckets: 0, preferredBrand: '农夫山泉', recurringEnabled: false }
+          : { emptyBuckets: 0, depositBuckets: 0, preferredBrand: '农夫山泉', recurringEnabled: false, recurringBrand: '农夫山泉' }
       }
     >
       <div className="grid grid-cols-2 gap-4">
@@ -169,56 +180,70 @@ const CustomerForm = ({ initialData, onSuccess, onCancel }: CustomerFormProps) =
         }
       >
         {recurringEnabled && (
-          <Row gutter={16}>
-            <Col span={8}>
-              <Form.Item
-                name="recurringIntervalDays"
-                label="间隔天数"
-                rules={[{ required: true, message: '请输入间隔天数' }]}
-                className="mb-0"
-              >
-                <InputNumber
-                  min={1}
-                  max={30}
-                  className="w-full"
-                  placeholder="如：3"
-                  addonAfter="天"
-                />
-              </Form.Item>
-            </Col>
-            <Col span={8}>
-              <Form.Item
-                name="recurringQuantity"
-                label="每次数量"
-                rules={[{ required: true, message: '请输入每次数量' }]}
-                className="mb-0"
-              >
-                <InputNumber
-                  min={1}
-                  max={20}
-                  className="w-full"
-                  placeholder="如：2"
-                  addonAfter="桶"
-                />
-              </Form.Item>
-            </Col>
-            <Col span={8}>
-              <Form.Item
-                name="recurringTimeWindow"
-                label="配送时段"
-                rules={[{ required: true, message: '请选择配送时段' }]}
-                className="mb-0"
-              >
-                <Select placeholder="请选择时段">
-                  {DELIVERY_TIME_WINDOWS.map((tw) => (
-                    <Select.Option key={tw} value={tw}>
-                      {tw}
-                    </Select.Option>
-                  ))}
-                </Select>
-              </Form.Item>
-            </Col>
-          </Row>
+          <div className="space-y-4">
+            <Form.Item
+              name="recurringBrand"
+              label="水品牌"
+              rules={[{ required: true, message: '请选择水品牌' }]}
+              className="mb-0"
+            >
+              <Select placeholder="请选择水品牌">
+                {BRANDS.map((b) => (
+                  <Select.Option key={b} value={b}>
+                    {b}
+                  </Select.Option>
+                ))}
+              </Select>
+            </Form.Item>
+            <Row gutter={16}>
+              <Col span={12}>
+                <Form.Item
+                  name="recurringIntervalDays"
+                  label="间隔天数"
+                  rules={[{ required: true, message: '请输入间隔天数' }]}
+                  className="mb-0"
+                >
+                  <InputNumber
+                    min={1}
+                    max={30}
+                    className="w-full"
+                    placeholder="如：3"
+                    addonAfter="天"
+                  />
+                </Form.Item>
+              </Col>
+              <Col span={12}>
+                <Form.Item
+                  name="recurringQuantity"
+                  label="每次数量"
+                  rules={[{ required: true, message: '请输入每次数量' }]}
+                  className="mb-0"
+                >
+                  <InputNumber
+                    min={1}
+                    max={20}
+                    className="w-full"
+                    placeholder="如：2"
+                    addonAfter="桶"
+                  />
+                </Form.Item>
+              </Col>
+            </Row>
+            <Form.Item
+              name="recurringTimeWindow"
+              label="配送时段"
+              rules={[{ required: true, message: '请选择配送时段' }]}
+              className="mb-0"
+            >
+              <Select placeholder="请选择时段">
+                {DELIVERY_TIME_WINDOWS.map((tw) => (
+                  <Select.Option key={tw} value={tw}>
+                    {tw}
+                  </Select.Option>
+                ))}
+              </Select>
+            </Form.Item>
+          </div>
         )}
         {!recurringEnabled && (
           <div className="text-gray-400 text-sm text-center py-2">
