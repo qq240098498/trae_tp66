@@ -175,9 +175,9 @@ export const generateMockInventories = (): Inventory[] => [
 export const generateMockOrders = (customers: Customer[]): Order[] => {
   const now = Date.now();
   
-  const createOrder = (customerIndex: number, brand: string, quantity: number, deliveryTimeWindow: string, status: Order['status'], deliveredBuckets: number, returnedBuckets: number, timeAgo: number): Order => {
+  const createOrder = (customerIndex: number, brand: string, quantity: number, deliveryTimeWindow: string, status: Order['status'], deliveredBuckets: number, returnedBuckets: number, timeAgo: number, disableFloorFee: boolean = false): Order => {
     const customer = customers[customerIndex];
-    const pricing = calculatePricing({ customer, quantity });
+    const pricing = calculatePricing({ customer, quantity, disableFloorFee });
     return {
       id: generateId(),
       customerId: customer.id,
@@ -187,6 +187,7 @@ export const generateMockOrders = (customers: Customer[]): Order[] => {
       floorFeeRate: pricing.floorFeeRate,
       floorFee: pricing.floorFee,
       totalAmount: pricing.totalAmount,
+      disableFloorFee,
       deliveryTimeWindow,
       status,
       deliveredBuckets,

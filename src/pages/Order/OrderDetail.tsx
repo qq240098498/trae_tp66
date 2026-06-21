@@ -218,7 +218,9 @@ const OrderDetail = () => {
           <Descriptions.Item label="商品单价">¥{order.unitPrice}/桶</Descriptions.Item>
           <Descriptions.Item label="商品费用">¥{order.unitPrice * order.quantity}</Descriptions.Item>
           <Descriptions.Item label="爬楼费">
-            {order.floorFee > 0 ? (
+            {order.disableFloorFee ? (
+              <Tag color="blue">手动免除</Tag>
+            ) : order.floorFee > 0 ? (
               <span className="text-orange-600 font-medium">+¥{order.floorFee}</span>
             ) : (
               <span className="text-gray-400">¥0</span>

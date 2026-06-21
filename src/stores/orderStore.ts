@@ -7,6 +7,7 @@ import { useCustomerStore } from './customerStore';
 import { useDeliveryStore } from './deliveryStore';
 import { findNearestDeliveryStaff } from '../utils/distance';
 import { calculatePricing } from '../utils/pricing';
+import { useSystemConfigStore } from './systemConfigStore';
 
 interface OrderState {
   orders: Order[];
@@ -36,14 +37,24 @@ export const useOrderStore = create<OrderState>()(
       },
       addOrder: (orderData) => {
         const customer = useCustomerStore.getState().getCustomer(orderData.customerId);
-        
+        const config = useSystemConfigStore.getState().config;
+        const disableFloorFee = orderData.disableFloorFee || false;
+
         const pricing = customer 
-          ? calculatePricing({ customer, quantity: orderData.quantity })
-          : { unitPrice: 20, floorFeeRate: 2, floorFee: 0, totalAmount: orderData.quantity * 20 };
+          ? calculatePricing({
+              customer,
+              quantity: orderData.quantity,
+              unitPrice: config.unitPrice,
+              floorFeeRate: config.floorFeeRate,
+              freeFloorThreshold: config.freeFloorThreshold,
+              disableFloorFee,
+            })
+          : { unitPrice: config.unitPrice, floorFeeRate: config.floorFeeRate, floorFee: 0, totalAmount: orderData.quantity * config.unitPrice };
 
         const newOrder: Order = {
           ...orderData,
           ...pricing,
+          disableFloorFee,
           id: generateId(),
           status: 'pending',
           deliveredBuckets: 0,

@@ -14,6 +14,7 @@ import {
   DailyReconciliation,
 } from '@/pages/BucketAsset';
 import { RecurringOrderList } from '@/pages/RecurringOrder';
+import { SystemConfig } from '@/pages/System';
 
 export default function App() {
   return (
@@ -41,6 +42,7 @@ export default function App() {
           <Route path="/reconciliation" element={<ReconciliationList />} />
           <Route path="/reconciliation/history" element={<ReconciliationHistory />} />
           <Route path="/recurring-order" element={<RecurringOrderList />} />
+          <Route path="/system/config" element={<SystemConfig />} />
         </Route>
       </Routes>
     </Router>

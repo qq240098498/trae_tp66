@@ -17,6 +17,7 @@ import {
   WarningOutlined,
   FileSearchOutlined,
   MessageOutlined,
+  SettingOutlined,
 } from '@ant-design/icons';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { cn } from '../../lib/utils';
@@ -90,6 +91,11 @@ const menuItems: NonNullable<MenuProps['items']> = [
     key: '/reconciliation',
     icon: <BarChartOutlined />,
     label: '对账中心',
+  },
+  {
+    key: '/system/config',
+    icon: <SettingOutlined />,
+    label: '系统配置',
   },
 ];
 

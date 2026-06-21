@@ -19,6 +19,7 @@ export interface Order {
   floorFeeRate: number;
   floorFee: number;
   totalAmount: number;
+  disableFloorFee: boolean;
   deliveryTimeWindow: DeliveryTimeWindow;
   status: OrderStatus;
   deliveryId?: string;
