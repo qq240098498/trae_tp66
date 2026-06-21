@@ -91,6 +91,16 @@ const CustomerList = () => {
       ),
     },
     {
+      title: '押桶数',
+      dataIndex: 'depositBuckets',
+      key: 'depositBuckets',
+      render: (count: number) => (
+        <span className="text-blue-600 font-medium">
+          {count} 个
+        </span>
+      ),
+    },
+    {
       title: '历史订单',
       key: 'orders',
       render: (_, record: Customer) => (

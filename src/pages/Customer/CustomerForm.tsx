@@ -41,7 +41,7 @@ const CustomerForm = ({ initialData, onSuccess, onCancel }: CustomerFormProps) =
     <Form
       form={form}
       layout="vertical"
-      initialValues={initialData || { emptyBuckets: 0, preferredBrand: '农夫山泉' }}
+      initialValues={initialData || { emptyBuckets: 0, depositBuckets: 0, preferredBrand: '农夫山泉' }}
     >
       <div className="grid grid-cols-2 gap-4">
         <Form.Item
@@ -94,17 +94,31 @@ const CustomerForm = ({ initialData, onSuccess, onCancel }: CustomerFormProps) =
         </Form.Item>
       </div>
 
-      <Form.Item
-        name="emptyBuckets"
-        label="初始空桶数"
-        rules={[{ required: true, message: '请输入初始空桶数' }]}
-      >
-        <InputNumber
-          min={0}
-          className="w-full"
-          placeholder="请输入客户当前持有的空桶数量"
-        />
-      </Form.Item>
+      <div className="grid grid-cols-2 gap-4">
+        <Form.Item
+          name="emptyBuckets"
+          label="初始空桶数"
+          rules={[{ required: true, message: '请输入初始空桶数' }]}
+        >
+          <InputNumber
+            min={0}
+            className="w-full"
+            placeholder="请输入客户当前持有的空桶数量"
+          />
+        </Form.Item>
+
+        <Form.Item
+          name="depositBuckets"
+          label="押桶数量"
+          rules={[{ required: true, message: '请输入押桶数量' }]}
+        >
+          <InputNumber
+            min={0}
+            className="w-full"
+            placeholder="请输入客户押桶的数量"
+          />
+        </Form.Item>
+      </div>
 
       <Form.Item className="mb-0">
         <Space className="w-full justify-end">

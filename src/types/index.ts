@@ -3,3 +3,4 @@ export * from './order';
 export * from './delivery';
 export * from './bucket';
 export * from './inventory';
+export * from './bucketAsset';

@@ -13,6 +13,7 @@ interface CustomerState {
   deleteCustomer: (id: string) => void;
   getCustomer: (id: string) => Customer | undefined;
   updateEmptyBuckets: (customerId: string, delta: number) => void;
+  updateDepositBuckets: (customerId: string, delta: number) => void;
 }
 
 export const useCustomerStore = create<CustomerState>()(
@@ -53,6 +54,15 @@ export const useCustomerStore = create<CustomerState>()(
           customers: get().customers.map((c) =>
             c.id === customerId
               ? { ...c, emptyBuckets: Math.max(0, c.emptyBuckets + delta) }
+              : c
+          ),
+        });
+      },
+      updateDepositBuckets: (customerId, delta) => {
+        set({
+          customers: get().customers.map((c) =>
+            c.id === customerId
+              ? { ...c, depositBuckets: Math.max(0, c.depositBuckets + delta) }
               : c
           ),
         });

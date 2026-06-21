@@ -7,6 +7,12 @@ import { DeliveryList, DeliveryDispatch } from '@/pages/Delivery';
 import { BucketReturnList, BucketReturnRecord } from '@/pages/Bucket';
 import { InventoryList, InventoryStock, InventoryCheck } from '@/pages/Inventory';
 import { ReconciliationList, ReconciliationHistory } from '@/pages/Reconciliation';
+import {
+  DepositList,
+  CirculationList,
+  DamageList,
+  DailyReconciliation,
+} from '@/pages/BucketAsset';
 
 export default function App() {
   return (
@@ -23,6 +29,10 @@ export default function App() {
           <Route path="/delivery/dispatch" element={<DeliveryDispatch />} />
           <Route path="/bucket" element={<BucketReturnList />} />
           <Route path="/bucket/record" element={<BucketReturnRecord />} />
+          <Route path="/bucket-asset/deposit" element={<DepositList />} />
+          <Route path="/bucket-asset/circulation" element={<CirculationList />} />
+          <Route path="/bucket-asset/damage" element={<DamageList />} />
+          <Route path="/bucket-asset/reconciliation" element={<DailyReconciliation />} />
           <Route path="/inventory" element={<InventoryList />} />
           <Route path="/inventory/stock" element={<InventoryStock />} />
           <Route path="/inventory/check" element={<InventoryCheck />} />

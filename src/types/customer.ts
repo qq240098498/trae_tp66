@@ -6,6 +6,7 @@ export interface Customer {
   floor: string;
   preferredBrand: string;
   emptyBuckets: number;
+  depositBuckets: number;
   latitude: number;
   longitude: number;
   createdAt: string;

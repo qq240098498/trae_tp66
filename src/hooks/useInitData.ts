@@ -4,6 +4,7 @@ import { useOrderStore } from '../stores/orderStore';
 import { useDeliveryStore } from '../stores/deliveryStore';
 import { useBucketStore } from '../stores/bucketStore';
 import { useInventoryStore } from '../stores/inventoryStore';
+import { useBucketAssetStore } from '../stores/bucketAssetStore';
 import { generateMockDeliveries, generateMockBucketReturns } from '../utils/mockData';
 
 export const useInitData = () => {
@@ -12,6 +13,7 @@ export const useInitData = () => {
   const deliveryInit = useDeliveryStore((state) => state.initData);
   const bucketInit = useBucketStore((state) => state.initData);
   const inventoryInit = useInventoryStore((state) => state.initData);
+  const bucketAssetInit = useBucketAssetStore((state) => state.initData);
 
   useEffect(() => {
     customerInit();
@@ -19,6 +21,7 @@ export const useInitData = () => {
     deliveryInit();
     bucketInit();
     inventoryInit();
+    bucketAssetInit();
 
     const customers = useCustomerStore.getState().customers;
     const orders = useOrderStore.getState().orders;
@@ -33,5 +36,5 @@ export const useInitData = () => {
       const returns = generateMockBucketReturns(customers, orders);
       useBucketStore.getState().initMockReturns(returns);
     }
-  }, [customerInit, orderInit, deliveryInit, bucketInit, inventoryInit]);
+  }, [customerInit, orderInit, deliveryInit, bucketInit, inventoryInit, bucketAssetInit]);
 };

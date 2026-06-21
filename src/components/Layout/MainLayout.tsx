@@ -11,6 +11,10 @@ import {
   MenuFoldOutlined,
   MenuUnfoldOutlined,
   UserOutlined,
+  SafetyOutlined,
+  SwapOutlined,
+  WarningOutlined,
+  FileSearchOutlined,
 } from '@ant-design/icons';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { cn } from '../../lib/utils';
@@ -44,9 +48,36 @@ const menuItems = [
     label: '空桶回收',
   },
   {
+    key: '/bucket-asset',
+    icon: <DatabaseOutlined />,
+    label: '水桶资产盘点',
+    children: [
+      {
+        key: '/bucket-asset/deposit',
+        icon: <SafetyOutlined />,
+        label: '押桶登记',
+      },
+      {
+        key: '/bucket-asset/circulation',
+        icon: <SwapOutlined />,
+        label: '桶流转管理',
+      },
+      {
+        key: '/bucket-asset/damage',
+        icon: <WarningOutlined />,
+        label: '桶损/丢失登记',
+      },
+      {
+        key: '/bucket-asset/reconciliation',
+        icon: <FileSearchOutlined />,
+        label: '每日平账',
+      },
+    ],
+  },
+  {
     key: '/inventory',
     icon: <DatabaseOutlined />,
-    label: '水桶资产',
+    label: '库存管理',
   },
   {
     key: '/reconciliation',
@@ -60,9 +91,33 @@ export const MainLayout = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const selectedKey = menuItems
-    .map((item) => item.key)
-    .find((key) => location.pathname.startsWith(key)) || '/';
+  const findSelectedKeys = () => {
+    const selected: string[] = [];
+    const open: string[] = [];
+
+    for (const item of menuItems) {
+      if (item.children) {
+        for (const child of item.children) {
+          if (location.pathname.startsWith(child.key)) {
+            selected.push(child.key);
+            open.push(item.key);
+            return { selectedKey: selected, openKey: open };
+          }
+        }
+      }
+      if (location.pathname.startsWith(item.key) && !item.children) {
+        selected.push(item.key);
+      }
+    }
+
+    if (selected.length === 0) {
+      selected.push('/');
+    }
+
+    return { selectedKey: selected, openKey: open };
+  };
+
+  const { selectedKey, openKey } = findSelectedKeys();
 
   const userMenuItems = [
     {
@@ -101,7 +156,9 @@ export const MainLayout = () => {
         </div>
         <Menu
           mode="inline"
-          selectedKeys={[selectedKey]}
+          selectedKeys={selectedKey}
+          defaultOpenKeys={openKey}
+          openKeys={openKey}
           items={menuItems}
           onClick={({ key }) => navigate(key)}
           className="border-none mt-2"
