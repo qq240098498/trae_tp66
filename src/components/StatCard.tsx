@@ -9,7 +9,9 @@ interface StatCardProps {
   icon: ReactNode;
   trend?: number;
   trendLabel?: string;
-  color?: 'blue' | 'green' | 'orange' | 'purple';
+  color?: 'blue' | 'green' | 'orange' | 'purple' | 'red';
+  onClick?: () => void;
+  className?: string;
 }
 
 const colorMap = {
@@ -17,6 +19,7 @@ const colorMap = {
   green: 'from-emerald-500 to-emerald-600',
   orange: 'from-orange-500 to-orange-600',
   purple: 'from-violet-500 to-violet-600',
+  red: 'from-red-500 to-red-600',
 };
 
 export const StatCard = ({
@@ -26,9 +29,11 @@ export const StatCard = ({
   trend,
   trendLabel = '较昨日',
   color = 'blue',
+  onClick,
+  className,
 }: StatCardProps) => {
   return (
-    <Card className="border-0 shadow-sm hover:shadow-md transition-shadow rounded-xl overflow-hidden">
+    <Card className={cn('border-0 shadow-sm hover:shadow-md transition-shadow rounded-xl overflow-hidden', className)} onClick={onClick}>
       <div className="flex items-start justify-between">
         <div>
           <p className="text-gray-500 text-sm mb-1">{title}</p>

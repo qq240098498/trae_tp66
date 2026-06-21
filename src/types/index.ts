@@ -4,3 +4,7 @@ export * from './delivery';
 export * from './bucket';
 export * from './inventory';
 export * from './bucketAsset';
+export * from './recurringOrder';
+
+export const BUCKET_DEPOSIT_PRICE = 50;
+export const BUCKET_PRICE = 20;

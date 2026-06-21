@@ -1,17 +1,32 @@
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { Card, Descriptions, Button, Space, Table, Tag, Empty, Modal } from 'antd';
-import { ArrowLeftOutlined, EditOutlined, PlusOutlined } from '@ant-design/icons';
+import { Card, Descriptions, Button, Space, Table, Tag, Empty, Modal, Timeline, message, Popconfirm } from 'antd';
+import { ArrowLeftOutlined, EditOutlined, PlusOutlined, CheckOutlined, CloseOutlined, HistoryOutlined, PlayCircleOutlined } from '@ant-design/icons';
 import { PageHeader } from '../../components/PageHeader';
 import { StatusTag } from '../../components/StatusTag';
 import { useCustomerStore } from '../../stores/customerStore';
 import { useOrderStore } from '../../stores/orderStore';
 import { useBucketStore } from '../../stores/bucketStore';
 import { useBucketAssetStore } from '../../stores/bucketAssetStore';
-import { formatDateTime } from '../../utils/date';
-import { BUCKET_DEPOSIT_PRICE } from '../../types';
+import { useRecurringOrderStore } from '../../stores/recurringOrderStore';
+import { formatDateTime, dayjs } from '../../utils/date';
+import { BUCKET_DEPOSIT_PRICE, PendingOrderStatus } from '../../types';
 import CustomerForm from './CustomerForm';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Customer } from '../../types';
+
+const PENDING_STATUS_COLORS: Record<PendingOrderStatus, string> = {
+  pending_sms: 'orange',
+  confirmed: 'green',
+  declined: 'red',
+  expired: 'gray',
+};
+
+const PENDING_STATUS_LABELS: Record<PendingOrderStatus, string> = {
+  pending_sms: '待确认',
+  confirmed: '已确认',
+  declined: '已取消',
+  expired: '已超时',
+};
 
 const CustomerDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -20,12 +35,24 @@ const CustomerDetail = () => {
   const { getCustomerOrders } = useOrderStore();
   const { getReturnsByCustomer } = useBucketStore();
   const { getDepositsByCustomer } = useBucketAssetStore();
+  const { getPendingOrdersByCustomer, getLogsByCustomer, confirmPendingOrder, declinePendingOrder, checkAndGenerateOrders } = useRecurringOrderStore();
   const [editModalVisible, setEditModalVisible] = useState(false);
+  const [, forceUpdate] = useState(0);
+
+  useEffect(() => {
+    checkAndGenerateOrders();
+    const interval = setInterval(() => {
+      forceUpdate((n) => n + 1);
+    }, 30000);
+    return () => clearInterval(interval);
+  }, [checkAndGenerateOrders]);
 
   const customer = getCustomer(id || '');
   const orders = getCustomerOrders(id || '');
   const returns = getReturnsByCustomer(id || '');
   const deposits = getDepositsByCustomer(id || '');
+  const pendingOrders = getPendingOrdersByCustomer(id || '');
+  const recurringLogs = getLogsByCustomer(id || '');
 
   if (!customer) {
     return (
@@ -210,9 +237,138 @@ const CustomerDetail = () => {
               <Descriptions.Item label="注册时间">
                 {formatDateTime(customer.createdAt)}
               </Descriptions.Item>
+              <Descriptions.Item label="周期下单">
+                {customer.recurringSchedule?.enabled ? (
+                  <Tag color="green">已启用</Tag>
+                ) : (
+                  <Tag color="gray">未启用</Tag>
+                )}
+              </Descriptions.Item>
+              {customer.recurringSchedule?.enabled && (
+                <>
+                  <Descriptions.Item label="下单周期">
+                    每 {customer.recurringSchedule.intervalDays} 天 {customer.recurringSchedule.quantity} 桶
+                  </Descriptions.Item>
+                  <Descriptions.Item label="配送时段">
+                    {customer.recurringSchedule.preferredTimeWindow}
+                  </Descriptions.Item>
+                  <Descriptions.Item label="下次下单">
+                    <span className="text-blue-600 font-medium">
+                      {dayjs(customer.recurringSchedule.nextOrderDate).format('YYYY-MM-DD')}
+                    </span>
+                  </Descriptions.Item>
+                </>
+              )}
             </Descriptions>
           </div>
         </div>
+      </Card>
+
+      <Card
+        title="待确认订单"
+        className="mb-6 border-0 shadow-sm"
+        extra={
+          <Button 
+            size="small" 
+            icon={<PlayCircleOutlined />}
+            onClick={() => {
+              checkAndGenerateOrders();
+              message.success('已检查周期订单');
+            }}
+          >
+            立即检查
+          </Button>
+        }
+      >
+        {pendingOrders.length > 0 ? (
+          <Table
+            size="small"
+            columns={[
+              {
+                title: '品牌',
+                dataIndex: 'brand',
+                key: 'brand',
+              },
+              {
+                title: '数量',
+                dataIndex: 'quantity',
+                key: 'quantity',
+                render: (q: number) => `${q} 桶`,
+              },
+              {
+                title: '配送时段',
+                dataIndex: 'deliveryTimeWindow',
+                key: 'deliveryTimeWindow',
+              },
+              {
+                title: '状态',
+                dataIndex: 'status',
+                key: 'status',
+                render: (status: PendingOrderStatus) => (
+                  <Tag color={PENDING_STATUS_COLORS[status]}>
+                    {PENDING_STATUS_LABELS[status]}
+                  </Tag>
+                ),
+              },
+              {
+                title: '短信发送时间',
+                dataIndex: 'smsSentAt',
+                key: 'smsSentAt',
+                render: (date: string) => formatDateTime(date),
+              },
+              {
+                title: '过期时间',
+                dataIndex: 'expiresAt',
+                key: 'expiresAt',
+                render: (date: string) => formatDateTime(date),
+              },
+              {
+                title: '操作',
+                key: 'action',
+                render: (_, record: any) => {
+                  if (record.status === 'pending_sms') {
+                    return (
+                      <Space>
+                        <Button 
+                          type="primary" 
+                          size="small"
+                          icon={<CheckOutlined />}
+                          onClick={() => confirmPendingOrder(record.id)}
+                        >
+                          确认下单
+                        </Button>
+                        <Popconfirm
+                          title="确定取消本次订单？"
+                          onConfirm={() => declinePendingOrder(record.id, false)}
+                        >
+                          <Button size="small" danger icon={<CloseOutlined />}>
+                            取消
+                          </Button>
+                        </Popconfirm>
+                        <Popconfirm
+                          title="取消并延后一期？"
+                          description="本次订单将取消，下次下单时间延后一个周期"
+                          onConfirm={() => declinePendingOrder(record.id, true)}
+                        >
+                          <Button size="small">延后一期</Button>
+                        </Popconfirm>
+                      </Space>
+                    );
+                  }
+                  if (record.orderId) {
+                    return <Link to={`/order/${record.orderId}`}>查看订单</Link>;
+                  }
+                  return '-';
+                },
+              },
+            ]}
+            dataSource={pendingOrders}
+            rowKey="id"
+            pagination={false}
+          />
+        ) : (
+          <Empty description="暂无待确认订单" />
+        )}
       </Card>
 
       <Card
@@ -245,7 +401,7 @@ const CustomerDetail = () => {
 
       <Card
         title="押桶记录"
-        className="border-0 shadow-sm"
+        className="mb-6 border-0 shadow-sm"
         extra={<span className="text-gray-500">共 {deposits.length} 条</span>}
       >
         <Table
@@ -255,6 +411,40 @@ const CustomerDetail = () => {
           pagination={{ pageSize: 5 }}
           locale={{ emptyText: '暂无押桶记录' }}
         />
+      </Card>
+
+      <Card
+        title={
+          <div className="flex items-center gap-2">
+            <HistoryOutlined />
+            <span>周期操作日志</span>
+          </div>
+        }
+        className="border-0 shadow-sm"
+        extra={<span className="text-gray-500">共 {recurringLogs.length} 条</span>}
+      >
+        {recurringLogs.length > 0 ? (
+          <Timeline
+            mode="left"
+            items={recurringLogs.slice(0, 10).map((log) => ({
+              color: (log.type.includes('confirmed') || log.type.includes('created') 
+                ? 'green' 
+                : log.type.includes('declined') || log.type.includes('expired') || log.type.includes('disabled')
+                ? 'red'
+                : log.type.includes('sms')
+                ? 'orange'
+                : 'blue') as any,
+              children: (
+                <div className="py-1">
+                  <div className="text-sm text-gray-800">{log.description}</div>
+                  <div className="text-xs text-gray-400">{formatDateTime(log.createdAt)}</div>
+                </div>
+              ),
+            }))}
+          />
+        ) : (
+          <Empty description="暂无操作日志" />
+        )}
       </Card>
 
       <Modal

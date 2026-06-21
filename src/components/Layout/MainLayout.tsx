@@ -16,6 +16,7 @@ import {
   SwapOutlined,
   WarningOutlined,
   FileSearchOutlined,
+  MessageOutlined,
 } from '@ant-design/icons';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { cn } from '../../lib/utils';
@@ -37,6 +38,11 @@ const menuItems: NonNullable<MenuProps['items']> = [
     key: '/order',
     icon: <FileTextOutlined />,
     label: '订单管理',
+  },
+  {
+    key: '/recurring-order',
+    icon: <MessageOutlined />,
+    label: '周期订单',
   },
   {
     key: '/delivery',

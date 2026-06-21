@@ -5,6 +5,7 @@ import { useDeliveryStore } from '../stores/deliveryStore';
 import { useBucketStore } from '../stores/bucketStore';
 import { useInventoryStore } from '../stores/inventoryStore';
 import { useBucketAssetStore } from '../stores/bucketAssetStore';
+import { useRecurringOrderStore } from '../stores/recurringOrderStore';
 import { generateMockDeliveries, generateMockBucketReturns } from '../utils/mockData';
 
 export const useInitData = () => {
@@ -14,6 +15,8 @@ export const useInitData = () => {
   const bucketInit = useBucketStore((state) => state.initData);
   const inventoryInit = useInventoryStore((state) => state.initData);
   const bucketAssetInit = useBucketAssetStore((state) => state.initData);
+  const recurringInit = useRecurringOrderStore((state) => state.initData);
+  const checkAndGenerateOrders = useRecurringOrderStore((state) => state.checkAndGenerateOrders);
 
   useEffect(() => {
     customerInit();
@@ -22,6 +25,7 @@ export const useInitData = () => {
     bucketInit();
     inventoryInit();
     bucketAssetInit();
+    recurringInit();
 
     const customers = useCustomerStore.getState().customers;
     const orders = useOrderStore.getState().orders;
@@ -36,5 +40,13 @@ export const useInitData = () => {
       const returns = generateMockBucketReturns(customers, orders);
       useBucketStore.getState().initMockReturns(returns);
     }
-  }, [customerInit, orderInit, deliveryInit, bucketInit, inventoryInit, bucketAssetInit]);
+
+    checkAndGenerateOrders();
+
+    const interval = setInterval(() => {
+      checkAndGenerateOrders();
+    }, 5 * 60 * 1000);
+
+    return () => clearInterval(interval);
+  }, [customerInit, orderInit, deliveryInit, bucketInit, inventoryInit, bucketAssetInit, recurringInit, checkAndGenerateOrders]);
 };

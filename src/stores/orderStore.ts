@@ -41,6 +41,7 @@ export const useOrderStore = create<OrderState>()(
           deliveredBuckets: 0,
           returnedBuckets: 0,
           createdAt: new Date().toISOString(),
+          source: orderData.source || 'manual',
         };
 
         set({ orders: [...get().orders, newOrder] });

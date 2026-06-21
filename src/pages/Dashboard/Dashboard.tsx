@@ -8,6 +8,7 @@ import {
   EditOutlined,
   RightOutlined,
   ClockCircleOutlined,
+  MessageOutlined,
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -30,6 +31,7 @@ import { useDeliveryStore } from '../../stores/deliveryStore';
 import { useBucketStore } from '../../stores/bucketStore';
 import { useInventoryStore } from '../../stores/inventoryStore';
 import { useCustomerStore } from '../../stores/customerStore';
+import { useRecurringOrderStore } from '../../stores/recurringOrderStore';
 import { formatDateTime, dayjs } from '../../utils/date';
 
 const Dashboard = () => {
@@ -39,12 +41,14 @@ const Dashboard = () => {
   const { getTodayReturns } = useBucketStore();
   const { inventories } = useInventoryStore();
   const { getCustomer } = useCustomerStore();
+  const { getPendingOrdersByStatus } = useRecurringOrderStore();
 
   const todayOrders = getTodayOrders();
   const deliveringOrders = getOrdersByStatus('delivering');
   const pendingOrders = getOrdersByStatus('pending');
   const assignedOrders = getOrdersByStatus('assigned');
   const todayReturns = getTodayReturns();
+  const pendingSmsOrders = getPendingOrdersByStatus('pending_sms');
 
   const pendingEmptyBuckets = orders.reduce((sum, order) => {
     if (order.status === 'completed' && order.returnedBuckets < order.quantity) {
@@ -96,6 +100,15 @@ const Dashboard = () => {
   const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#8B5CF6', '#EF4444'];
 
   const todoItems = [
+    ...pendingSmsOrders.slice(0, 2).map((order) => ({
+      id: order.id,
+      type: 'pending_sms' as const,
+      title: `待确认 - ${getCustomer(order.customerId)?.name}`,
+      customer: getCustomer(order.customerId)?.name,
+      time: order.smsSentAt,
+      quantity: order.quantity,
+      brand: order.brand,
+    })),
     ...pendingOrders.slice(0, 3).map((order) => ({
       id: order.id,
       type: 'pending' as const,
@@ -118,7 +131,7 @@ const Dashboard = () => {
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
         <StatCard
           title="今日订单"
           value={todayOrders.length}
@@ -147,6 +160,16 @@ const Dashboard = () => {
           trend={8}
           color="purple"
         />
+        {pendingSmsOrders.length > 0 && (
+          <StatCard
+            title="待确认订单"
+            value={pendingSmsOrders.length}
+            icon={<MessageOutlined />}
+            color="red"
+            onClick={() => navigate('/recurring-order')}
+            className="cursor-pointer"
+          />
+        )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -165,7 +188,13 @@ const Dashboard = () => {
               renderItem={(item) => (
                 <List.Item
                   className="cursor-pointer hover:bg-gray-50 rounded-lg px-2 -mx-2"
-                  onClick={() => navigate(`/order/${item.id}`)}
+                  onClick={() => {
+                    if (item.type === 'pending_sms') {
+                      navigate('/recurring-order');
+                    } else {
+                      navigate(`/order/${item.id}`);
+                    }
+                  }}
                 >
                   <List.Item.Meta
                     title={
@@ -175,10 +204,12 @@ const Dashboard = () => {
                         </span>
                         <Tag
                           color={
+                            item.type === 'pending_sms' ? 'red' :
                             item.type === 'pending' ? 'orange' : 'blue'
                           }
                         >
-                          {item.type === 'pending' ? '待派单' : '已派单'}
+                          {item.type === 'pending_sms' ? '待确认' :
+                           item.type === 'pending' ? '待派单' : '已派单'}
                         </Tag>
                       </div>
                     }

@@ -1,3 +1,5 @@
+import type { RecurringSchedule } from './recurringOrder';
+
 export interface Customer {
   id: string;
   name: string;
@@ -10,6 +12,7 @@ export interface Customer {
   latitude: number;
   longitude: number;
   createdAt: string;
+  recurringSchedule?: RecurringSchedule;
 }
 
 export type CustomerFormData = Omit<Customer, 'id' | 'createdAt'>;

@@ -1,5 +1,6 @@
 import { generateId } from './id';
 import { Customer, DeliveryStaff, Inventory, Order, BucketReturn, Delivery } from '../types';
+import { dayjs } from './date';
 
 const baseLat = 39.9042;
 const baseLon = 116.4074;
@@ -19,6 +20,14 @@ export const generateMockCustomers = (): Customer[] => [
     latitude: baseLat + randomOffset(),
     longitude: baseLon + randomOffset(),
     createdAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
+    recurringSchedule: {
+      enabled: true,
+      intervalDays: 3,
+      quantity: 2,
+      preferredTimeWindow: '14:00-16:00',
+      lastOrderDate: dayjs().subtract(3, 'day').toISOString(),
+      nextOrderDate: dayjs().toISOString(),
+    },
   },
   {
     id: generateId(),
@@ -32,6 +41,14 @@ export const generateMockCustomers = (): Customer[] => [
     latitude: baseLat + randomOffset(),
     longitude: baseLon + randomOffset(),
     createdAt: new Date(Date.now() - 25 * 24 * 60 * 60 * 1000).toISOString(),
+    recurringSchedule: {
+      enabled: true,
+      intervalDays: 7,
+      quantity: 3,
+      preferredTimeWindow: '10:00-12:00',
+      lastOrderDate: dayjs().subtract(7, 'day').toISOString(),
+      nextOrderDate: dayjs().toISOString(),
+    },
   },
   {
     id: generateId(),
@@ -45,6 +62,14 @@ export const generateMockCustomers = (): Customer[] => [
     latitude: baseLat + randomOffset(),
     longitude: baseLon + randomOffset(),
     createdAt: new Date(Date.now() - 20 * 24 * 60 * 60 * 1000).toISOString(),
+    recurringSchedule: {
+      enabled: true,
+      intervalDays: 5,
+      quantity: 4,
+      preferredTimeWindow: '16:00-18:00',
+      lastOrderDate: dayjs().subtract(5, 'day').toISOString(),
+      nextOrderDate: dayjs().add(0, 'day').toISOString(),
+    },
   },
   {
     id: generateId(),

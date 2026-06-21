@@ -21,6 +21,13 @@ export interface Order {
   deliveredBuckets: number;
   returnedBuckets: number;
   createdAt: string;
+  source?: 'manual' | 'auto';
+  pendingOrderId?: string;
 }
+
+export const ORDER_SOURCE_LABELS: Record<string, string> = {
+  manual: '手动下单',
+  auto: '自动下单',
+};
 
 export type OrderFormData = Omit<Order, 'id' | 'status' | 'deliveredBuckets' | 'returnedBuckets' | 'createdAt'>;
