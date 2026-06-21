@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Layout, Menu, Avatar, Dropdown } from 'antd';
+import type { MenuProps } from 'antd';
 import {
   DashboardOutlined,
   TeamOutlined,
@@ -21,7 +22,7 @@ import { cn } from '../../lib/utils';
 
 const { Header, Sider, Content } = Layout;
 
-const menuItems = [
+const menuItems: NonNullable<MenuProps['items']> = [
   {
     key: '/',
     icon: <DashboardOutlined />,
@@ -86,38 +87,57 @@ const menuItems = [
   },
 ];
 
+const submenuKeys = menuItems
+  .filter((item) => item && 'children' in item && item.children)
+  .map((item) => String(item!.key));
+
 export const MainLayout = () => {
   const [collapsed, setCollapsed] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
 
-  const findSelectedKeys = () => {
-    const selected: string[] = [];
-    const open: string[] = [];
-
+  const { selectedKey, parentKey } = useMemo(() => {
+    const { pathname } = location;
     for (const item of menuItems) {
-      if (item.children) {
+      if (!item) continue;
+      if ('children' in item && item.children) {
         for (const child of item.children) {
-          if (location.pathname.startsWith(child.key)) {
-            selected.push(child.key);
-            open.push(item.key);
-            return { selectedKey: selected, openKey: open };
+          if (child && pathname.startsWith(String(child.key))) {
+            return { selectedKey: String(child.key), parentKey: String(item.key) };
           }
         }
       }
-      if (location.pathname.startsWith(item.key) && !item.children) {
-        selected.push(item.key);
+    }
+    for (const item of menuItems) {
+      if (!item) continue;
+      if (!('children' in item && item.children) && pathname.startsWith(String(item.key))) {
+        return { selectedKey: String(item.key), parentKey: undefined };
       }
     }
+    return { selectedKey: '/', parentKey: undefined };
+  }, [location.pathname]);
 
-    if (selected.length === 0) {
-      selected.push('/');
+  const [openKeys, setOpenKeys] = useState<string[]>(
+    parentKey ? [parentKey] : []
+  );
+
+  useEffect(() => {
+    if (parentKey && !openKeys.includes(parentKey)) {
+      setOpenKeys((prev) => [...prev, parentKey]);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [parentKey]);
 
-    return { selectedKey: selected, openKey: open };
+  const handleOpenChange = (keys: string[]) => {
+    setOpenKeys(keys.filter((k) => submenuKeys.includes(k)));
   };
 
-  const { selectedKey, openKey } = findSelectedKeys();
+  const handleClick = ({ key }: { key: string }) => {
+    if (submenuKeys.includes(key)) {
+      return;
+    }
+    navigate(key);
+  };
 
   const userMenuItems = [
     {
@@ -156,11 +176,11 @@ export const MainLayout = () => {
         </div>
         <Menu
           mode="inline"
-          selectedKeys={selectedKey}
-          defaultOpenKeys={openKey}
-          openKeys={openKey}
+          selectedKeys={[selectedKey]}
+          openKeys={openKeys}
+          onOpenChange={handleOpenChange}
           items={menuItems}
-          onClick={({ key }) => navigate(key)}
+          onClick={handleClick}
           className="border-none mt-2"
         />
       </Sider>

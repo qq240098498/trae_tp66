@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { MainLayout } from '@/components/Layout/MainLayout';
 import { Dashboard } from '@/pages/Dashboard';
 import { CustomerList, CustomerDetail } from '@/pages/Customer';
@@ -29,6 +29,7 @@ export default function App() {
           <Route path="/delivery/dispatch" element={<DeliveryDispatch />} />
           <Route path="/bucket" element={<BucketReturnList />} />
           <Route path="/bucket/record" element={<BucketReturnRecord />} />
+          <Route path="/bucket-asset" element={<Navigate to="/bucket-asset/deposit" replace />} />
           <Route path="/bucket-asset/deposit" element={<DepositList />} />
           <Route path="/bucket-asset/circulation" element={<CirculationList />} />
           <Route path="/bucket-asset/damage" element={<DamageList />} />
