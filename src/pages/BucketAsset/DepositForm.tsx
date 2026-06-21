@@ -93,13 +93,28 @@ const DepositForm = ({ initialCustomerId, initialActionType = 'deposit', onSucce
       <Form.Item
         name="quantity"
         label={`${actionType === 'deposit' ? '押桶' : '退桶'}数量`}
-        rules={[{ required: true, message: '请输入数量' }]}
+        rules={[
+          { required: true, message: '请输入数量' },
+          { type: 'number', min: 1, message: '数量必须为大于0的整数' },
+        ]}
       >
         <InputNumber
           min={1}
           max={actionType === 'refund' ? maxRefund : 100}
+          precision={0}
           className="w-full"
           placeholder={`请输入${actionType === 'deposit' ? '押桶' : '退桶'}数量`}
+          onKeyDown={(e) => {
+            if (['-', '+', '.', 'e', 'E'].includes(e.key)) {
+              e.preventDefault();
+            }
+          }}
+          onPaste={(e) => {
+            const text = e.clipboardData.getData('text');
+            if (/[^\d]/.test(text)) {
+              e.preventDefault();
+            }
+          }}
           onChange={(value) => setQuantity(value || 1)}
         />
       </Form.Item>

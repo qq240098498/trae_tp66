@@ -130,15 +130,18 @@ export const useBucketAssetStore = create<BucketAssetState>()(
       },
 
       addDeposit: (data) => {
+        const safeQuantity = Math.max(1, Math.floor(data.quantity));
         const record: DepositRecord = {
           ...data,
+          quantity: safeQuantity,
+          amount: safeQuantity * BUCKET_DEPOSIT_PRICE,
           id: generateId(),
           createdAt: new Date().toISOString(),
         };
 
         set({ depositRecords: [...get().depositRecords, record] });
 
-        const delta = data.actionType === 'deposit' ? data.quantity : -data.quantity;
+        const delta = data.actionType === 'deposit' ? safeQuantity : -safeQuantity;
         useCustomerStore.getState().updateDepositBuckets(data.customerId, delta);
       },
 
@@ -155,6 +158,7 @@ export const useBucketAssetStore = create<BucketAssetState>()(
       addCirculation: (data) => {
         const circulation: BucketCirculation = {
           ...data,
+          quantity: Math.max(1, Math.floor(data.quantity)),
           id: generateId(),
           createdAt: new Date().toISOString(),
         };
@@ -177,8 +181,12 @@ export const useBucketAssetStore = create<BucketAssetState>()(
       },
 
       addDamage: (data) => {
+        const safeQuantity = Math.max(1, Math.floor(data.quantity));
         const damage: BucketDamage = {
           ...data,
+          quantity: safeQuantity,
+          amount: safeQuantity * BUCKET_DAMAGE_PRICE,
+          chargedAmount: Math.max(0, data.chargedAmount),
           id: generateId(),
           createdAt: new Date().toISOString(),
         };
@@ -196,13 +204,13 @@ export const useBucketAssetStore = create<BucketAssetState>()(
         const circulations = get().getCirculationsByStaff(staffId, date);
         const takeout = circulations
           .filter((c) => c.type === 'takeout')
-          .reduce((sum, c) => sum + c.quantity, 0);
+          .reduce((sum, c) => sum + Math.max(0, c.quantity), 0);
         const sign = circulations
           .filter((c) => c.type === 'sign')
-          .reduce((sum, c) => sum + c.quantity, 0);
+          .reduce((sum, c) => sum + Math.max(0, c.quantity), 0);
         const return_ = circulations
           .filter((c) => c.type === 'return')
-          .reduce((sum, c) => sum + c.quantity, 0);
+          .reduce((sum, c) => sum + Math.max(0, c.quantity), 0);
 
         return takeout - sign - return_;
       },
@@ -215,14 +223,14 @@ export const useBucketAssetStore = create<BucketAssetState>()(
 
         const takeoutCount = circulations
           .filter((c) => c.type === 'takeout')
-          .reduce((sum, c) => sum + c.quantity, 0);
+          .reduce((sum, c) => sum + Math.max(0, c.quantity), 0);
         const signCount = circulations
           .filter((c) => c.type === 'sign')
-          .reduce((sum, c) => sum + c.quantity, 0);
+          .reduce((sum, c) => sum + Math.max(0, c.quantity), 0);
         const returnCount = circulations
           .filter((c) => c.type === 'return')
-          .reduce((sum, c) => sum + c.quantity, 0);
-        const damageCount = damages.reduce((sum, d) => sum + d.quantity, 0);
+          .reduce((sum, c) => sum + Math.max(0, c.quantity), 0);
+        const damageCount = damages.reduce((sum, d) => sum + Math.max(0, d.quantity), 0);
 
         const difference = takeoutCount - signCount - returnCount - damageCount;
 
@@ -293,20 +301,20 @@ export const useBucketAssetStore = create<BucketAssetState>()(
         return {
           totalTakeout: circulations
             .filter((c) => c.type === 'takeout')
-            .reduce((sum, c) => sum + c.quantity, 0),
+            .reduce((sum, c) => sum + Math.max(0, c.quantity), 0),
           totalSign: circulations
             .filter((c) => c.type === 'sign')
-            .reduce((sum, c) => sum + c.quantity, 0),
+            .reduce((sum, c) => sum + Math.max(0, c.quantity), 0),
           totalReturn: circulations
             .filter((c) => c.type === 'return')
-            .reduce((sum, c) => sum + c.quantity, 0),
-          totalDamage: damages.reduce((sum, d) => sum + d.quantity, 0),
+            .reduce((sum, c) => sum + Math.max(0, c.quantity), 0),
+          totalDamage: damages.reduce((sum, d) => sum + Math.max(0, d.quantity), 0),
           totalDeposit: deposits
             .filter((d) => d.actionType === 'deposit')
-            .reduce((sum, d) => sum + d.amount, 0),
+            .reduce((sum, d) => sum + Math.max(0, d.amount), 0),
           totalDepositRefund: deposits
             .filter((d) => d.actionType === 'refund')
-            .reduce((sum, d) => sum + d.amount, 0),
+            .reduce((sum, d) => sum + Math.max(0, d.amount), 0),
         };
       },
     }),
