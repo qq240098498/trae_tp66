@@ -156,13 +156,14 @@ export const useInventoryStore = create<InventoryState>()(
       },
       generateReconciliation: (date = getToday()) => {
         const orders = useOrderStore.getState().orders.filter((o) => 
-          dayjs(o.createdAt).isSame(dayjs(date), 'day') && o.status !== 'cancelled'
+          dayjs(o.createdAt).isSame(dayjs(date), 'day') &&
+          (o.status === 'delivering' || o.status === 'completed')
         );
         const returns = useBucketStore.getState().returns.filter((r) =>
           dayjs(r.createdAt).isSame(dayjs(date), 'day')
         );
 
-        const totalDelivered = orders.reduce((sum, o) => sum + o.quantity, 0);
+        const totalDelivered = orders.reduce((sum, o) => sum + o.deliveredBuckets, 0);
         const totalReturned = returns.reduce((sum, r) => sum + r.quantity, 0);
         const difference = totalDelivered - totalReturned;
 

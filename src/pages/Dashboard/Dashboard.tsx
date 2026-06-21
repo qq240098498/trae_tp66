@@ -59,23 +59,27 @@ const Dashboard = () => {
 
   const last7DaysData = Array.from({ length: 7 }, (_, i) => {
     const date = dayjs().subtract(6 - i, 'day');
-    const dayOrders = orders.filter((o) =>
-      dayjs(o.createdAt).isSame(date, 'day') && o.status !== 'cancelled'
+    const dayOrders = orders.filter(
+      (o) =>
+        dayjs(o.createdAt).isSame(date, 'day') &&
+        (o.status === 'delivering' || o.status === 'completed')
     );
     return {
       date: date.format('MM/DD'),
-      配送量: dayOrders.reduce((sum, o) => sum + o.quantity, 0),
+      配送量: dayOrders.reduce((sum, o) => sum + o.deliveredBuckets, 0),
       订单数: dayOrders.length,
     };
   });
 
   const brandSalesData = inventories.map((inv) => {
     const brandOrders = orders.filter(
-      (o) => o.brand === inv.brand && o.status !== 'cancelled'
+      (o) =>
+        o.brand === inv.brand &&
+        (o.status === 'delivering' || o.status === 'completed')
     );
     return {
       name: inv.brand,
-      value: brandOrders.reduce((sum, o) => sum + o.quantity, 0),
+      value: brandOrders.reduce((sum, o) => sum + o.deliveredBuckets, 0),
     };
   });
 
