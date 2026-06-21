@@ -77,8 +77,10 @@ const OrderDetail = () => {
   };
 
   const handleCompleteDelivery = () => {
-    if (delivery) {
+    if (delivery && order.status === 'delivering') {
       updateDeliveryStatus(delivery.id, 'delivered');
+      updateOrderStatus(order.id, 'completed');
+      updateInventory(order.brand, 0, order.quantity, 'return', `订单完成回收: #${order.id.slice(-6)}`);
       message.success('配送已完成');
     }
   };
