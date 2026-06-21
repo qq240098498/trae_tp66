@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Card, Table, Tag, Button, Space, Tabs, message, Popconfirm, Statistic, Row, Col, Modal, Alert } from 'antd';
-import { CheckOutlined, CloseOutlined, PlayCircleOutlined, MessageOutlined, PhoneOutlined, UserOutlined } from '@ant-design/icons';
+import { CheckOutlined, CloseOutlined, PlayCircleOutlined, MessageOutlined, PhoneOutlined, UserOutlined, PlusOutlined } from '@ant-design/icons';
 import { Link, useNavigate } from 'react-router-dom';
 import { PageHeader } from '../../components/PageHeader';
 import { useCustomerStore } from '../../stores/customerStore';
@@ -39,8 +39,10 @@ const RecurringOrderList = () => {
   } = useRecurringOrderStore();
   const [activeTab, setActiveTab] = useState('pending');
   const [editModalVisible, setEditModalVisible] = useState(false);
+  const [addModalVisible, setAddModalVisible] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
   const [form] = Form.useForm();
+  const [addForm] = Form.useForm();
   const [, forceUpdate] = useState(0);
 
   useEffect(() => {
@@ -90,6 +92,43 @@ const RecurringOrderList = () => {
   const handleSimulateSms = (orderId: string, confirm: boolean) => {
     simulateSmsReply(orderId, confirm);
     message.success(confirm ? '已模拟确认短信' : '已模拟取消短信');
+  };
+
+  const handleAddSchedule = () => {
+    addForm.resetFields();
+    addForm.setFieldsValue({
+      intervalDays: 3,
+      quantity: 2,
+      preferredTimeWindow: '14:00-16:00',
+    });
+    setAddModalVisible(true);
+  };
+
+  const handleSaveAddSchedule = async () => {
+    try {
+      const values = await addForm.validateFields();
+      const { getCustomer, updateCustomer } = useCustomerStore.getState();
+      const customer = getCustomer(values.customerId);
+      
+      if (!customer) {
+        message.error('客户不存在');
+        return;
+      }
+
+      updateCustomerSchedule(values.customerId, {
+        enabled: true,
+        intervalDays: values.intervalDays,
+        quantity: values.quantity,
+        preferredTimeWindow: values.preferredTimeWindow,
+        nextOrderDate: dayjs().add(values.intervalDays, 'day').toISOString(),
+      });
+
+      message.success('周期设置已添加');
+      setAddModalVisible(false);
+      setActiveTab('customers');
+    } catch {
+      // 验证失败
+    }
   };
 
   const pendingColumns = [
@@ -350,6 +389,12 @@ const RecurringOrderList = () => {
               className="bg-blue-50"
             />
             <Button 
+              icon={<PlusOutlined />}
+              onClick={handleAddSchedule}
+            >
+              新增周期设置
+            </Button>
+            <Button 
               type="primary" 
               icon={<PlayCircleOutlined />}
               onClick={() => {
@@ -474,6 +519,71 @@ const RecurringOrderList = () => {
           >
             <InputNumber min={1} max={20} className="w-full" addonAfter="桶" />
           </Form.Item>
+          <Form.Item
+            name="preferredTimeWindow"
+            label="配送时段"
+            rules={[{ required: true, message: '请选择配送时段' }]}
+          >
+            <Select placeholder="请选择时段">
+              {DELIVERY_TIME_WINDOWS.map((tw) => (
+                <Select.Option key={tw} value={tw}>
+                  {tw}
+                </Select.Option>
+              ))}
+            </Select>
+          </Form.Item>
+        </Form>
+      </Modal>
+
+      <Modal
+        title="新增周期设置"
+        open={addModalVisible}
+        onCancel={() => setAddModalVisible(false)}
+        onOk={handleSaveAddSchedule}
+        destroyOnClose
+        width={500}
+      >
+        <Form form={addForm} layout="vertical">
+          <Form.Item
+            name="customerId"
+            label="选择客户"
+            rules={[{ required: true, message: '请选择客户' }]}
+          >
+            <Select 
+              placeholder="请选择要设置周期下单的客户"
+              showSearch
+              optionFilterProp="children"
+              filterOption={(input, option) =>
+                (option?.label as string).toLowerCase().includes(input.toLowerCase())
+              }
+              options={customers
+                .filter((c) => !c.recurringSchedule?.enabled)
+                .map((c) => ({
+                  value: c.id,
+                  label: `${c.name} - ${c.phone}`,
+                }))}
+            />
+          </Form.Item>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item
+                name="intervalDays"
+                label="间隔天数"
+                rules={[{ required: true, message: '请输入间隔天数' }]}
+              >
+                <InputNumber min={1} max={30} className="w-full" addonAfter="天" />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item
+                name="quantity"
+                label="每次数量"
+                rules={[{ required: true, message: '请输入每次数量' }]}
+              >
+                <InputNumber min={1} max={20} className="w-full" addonAfter="桶" />
+              </Form.Item>
+            </Col>
+          </Row>
           <Form.Item
             name="preferredTimeWindow"
             label="配送时段"
